@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="h2 mb-4">Add a Query</h2>
+
+    <form action="/queries/add" method="post">
+        <div class="mb-3">
+            <label for="query_name" class="form-label">Query Name</label>
+            <input type="text" placeholder="Enter query name..." class="form-control" id="query_name"
+                   name="query_name" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="query_text" class="form-label">Query Text</label>
+            <div id="editor" style="height: 200px;"></div>
+            <input type="hidden" name="query_text" id="query_text">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Add</button>
+    </form>
+</div>
+
+{% include 'includes/sql_editor.html' %}
+{% endblock %}
+

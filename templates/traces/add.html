@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="h2 mb-4">Add a Trace</h2>
+
+    <form action="/traces/add" method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="trace_name" class="form-label">Trace Name</label>
+            <input type="text" placeholder="Enter trace name..." class="form-control" id="trace_name"
+                   name="trace_name" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="device_id" class="form-label">Device</label>
+            <select class="form-select" id="device_id" name="device_id" required>
+                <option selected disabled value="">Choose...</option>
+                {% for device in devices %}
+                <option value="{{ device.device_id }}">{{ device.device_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="trace_timestamp" class="form-label">Timestamp</label>
+            <input type="datetime-local" class="form-control" id="trace_timestamp" name="trace_timestamp" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="trace_file" class="form-label">Trace File</label>
+            <input type="file" class="form-control" id="trace_file" name="trace_file" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Add</button>
+    </form>
+</div>
+{% endblock %}

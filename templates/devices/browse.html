@@ -1,0 +1,98 @@
+{% extends "layout.html" %}{% block content %}
+<div class="d-flex justify-content-between mb-4"><h2 class="h2">Devices</h2><a href="/devices/add"
+                                                                               class="btn btn-primary"
+                                                                               role="button">Add a Device</a></div>
+<ul class="list-group">{% for device in devices %}
+    <li class="list-group-item d-flex justify-content-between align-items-center p-3 my-2 border rounded-3 shadow">
+
+        <!-- LEFT SIDE: Device Details and Status -->
+        <div class="device-details me-3">
+            <div class="d-flex align-items-center mb-1">
+                <!-- (2) is_connected field check (assumes device has an 'is_connected' attribute, defaults to False) -->
+                {% if device.is_connected | default(False) %}
+                <span class="badge bg-success me-2">
+                <i class="fas fa-plug"></i> Connected
+            </span>
+                {% else %}
+                <span class="badge bg-secondary me-2">
+                <i class="fas fa-unlink"></i> Disconnected
+            </span>
+                {% endif %}
+            </div>
+
+            <!-- Removed text-primary class for less color -->
+            <h5 class="mb-0">{{ device.device_name }}</h5>
+
+            <small class="d-block text-muted">
+                <strong class="text-dark">ID:</strong> {{ device.device_id }}
+            </small>
+            <small class="d-block text-muted">
+                <strong class="text-dark">UUID:</strong> {{ device.device_uuid | default('N/A') }}
+            </small>
+        </div>
+
+        <!-- RIGHT SIDE: Action Buttons Container (Stacked Rows) -->
+        <div class="device-actions d-flex flex-column align-items-end gap-2">
+
+            <!-- TOP ROW: Edit and Delete -->
+            <div class="top-actions d-flex gap-2">
+
+                <!-- (1) Edit Button (GET request) - Neutral Outline -->
+                <a href="{{ url_for('read_edit_device', device_id=device.device_id) }}"
+                   class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
+
+                <!-- Delete Button - Danger Color -->
+                <form method="post" action="{{ url_for('delete_device', device_id=device.device_id) }}" class="m-0">
+                    <button type="submit" class="btn btn-sm btn-danger">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </form>
+            </div>
+
+            <!-- BOTTOM ROW: Main Automation Actions - Outline Primary Style -->
+            <div class="main-actions d-flex flex-wrap justify-content-end gap-2">
+
+                <!-- (a) Install Automation App -->
+                <form method="post"
+                      action="{{ url_for('device_action', device_id=device.device_id, action='install_auto') }}"
+                      class="m-0">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-download"></i> Install
+                    </button>
+                </form>
+
+                <!-- (b) Run Automation -->
+                <form method="post"
+                      action="{{ url_for('device_action', device_id=device.device_id, action='run_auto') }}"
+                      class="m-0">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-running"></i> Run Auto
+                    </button>
+                </form>
+
+                <!-- (c) Run Trace w/o Automation -->
+                <form method="post"
+                      action="{{ url_for('device_action', device_id=device.device_id, action='run_trace') }}"
+                      class="m-0">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-search-location"></i> Trace Only
+                    </button>
+                </form>
+
+                <!-- (d) Run Trace w/ Automation -->
+                <form method="post"
+                      action="{{ url_for('device_action', device_id=device.device_id, action='run_trace_auto') }}"
+                      class="m-0">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-crosshairs"></i> Trace & Auto
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}

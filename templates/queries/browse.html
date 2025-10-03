@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="d-flex justify-content-between mb-4">
+    <h2 class="h2">Queries</h2>
+    <a href="/queries/add" class="btn btn-primary" role="button">Add a Query</a>
+</div>
+<div class="list-group">
+    {% for query in queries %}
+    <div class="list-group-item p-3 my-2 border rounded-3 shadow-sm">
+        <div class="d-flex justify-content-between">
+            <div>
+                <h5 class="mb-1">{{ query.query_name }}</h5>
+                <code class="query-text-container">
+                    {{ query.query_text }}
+                </code>
+            </div>
+            <div class="d-flex flex-column gap-2">
+                <a href="{{ url_for('read_edit_query', query_id=query.query_id) }}"
+                   class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
+                <form method="post" action="{{ url_for('delete_query', query_id=query.query_id) }}" class="m-0">
+                    <button type="submit" class="btn btn-sm btn-danger">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+

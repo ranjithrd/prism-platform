@@ -1,0 +1,17 @@
+{
+  "name": "platform",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build-css": "sass assets/scss/main.scss static/main.css",
+    "watch-css": "sass --watch assets/scss/main.scss static/main.css"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "bootstrap": "^5.3.8",
+    "sass": "^1.93.2"
+  }
+}
