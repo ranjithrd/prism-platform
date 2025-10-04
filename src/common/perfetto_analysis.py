@@ -71,8 +71,9 @@ def run_query_on_file(filepath: str, query: str) -> Dict[str, List[Any]]:
     the library's managed binary, making it immune to environment issues.
     """
     try:
-        correct_shell_path = _get_actual_binary_path()
-        config = TraceProcessorConfig(bin_path=correct_shell_path)
+        # correct_shell_path = _get_actual_binary_path()
+        # config = TraceProcessorConfig(bin_path=correct_shell_path)
+        config = TraceProcessorConfig()
         tp = TraceProcessor(trace=filepath, config=config)
 
         query_iterator = tp.query(query)
