@@ -1,25 +1,41 @@
 import uuid
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, Depends, Request, Form
 from sqlmodel import select
 from starlette.responses import HTMLResponse, RedirectResponse
 
-from src.common.db import get_session, Device
+from src.common.db import get_session, Device, DeviceWithRedisInfo, Config
+from src.common.redis_client import get_redis_client
 from src.common.templates import templates
 
 app = APIRouter()
 
 
 @app.get("/devices", response_class=HTMLResponse)
-def read_devices(request: Request, session=Depends(get_session)):
+def read_devices(request: Request, session=Depends(get_session), redis_client=Depends(get_redis_client)):
     devices = session.exec(select(Device).order_by(Device.device_uuid)).all()
+    configs = session.exec(select(Config).order_by(Config.config_name)).all()
+
+    devices_with_status: List[DeviceWithRedisInfo] = []
+
+    # Fetch device statuses from Redis
+    for device in devices:
+        device_info = DeviceWithRedisInfo.from_orm(device)
+        if redis_client and device.device_uuid:
+            status_info = redis_client.get_device_status(device.device_uuid)
+            if status_info:
+                print(status_info)
+                device_info.status = status_info.get("status")
+                device_info.host = status_info.get("current_host")
+        devices_with_status.append(device_info)
 
     return templates.TemplateResponse(
         "devices/browse.html",
         context={
             "request": request,
-            "devices": devices,
+            "devices": devices_with_status,
+            "configs": configs,
         },
     )
 

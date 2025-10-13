@@ -20,6 +20,11 @@ class Device(SQLModel, table=True):
     device_uuid: str = Field(str, nullable=True)
 
 
+class DeviceWithRedisInfo(Device):
+    status: str | None = None
+    host: str | None = None
+
+
 class Host(SQLModel, table=True):
     __tablename__ = "hosts"
 
@@ -49,6 +54,35 @@ class Query(SQLModel, table=True):
         nullable=False,
         sa_column_kwargs={"onupdate": datetime.datetime.utcnow}
     )
+
+
+class Config(SQLModel, table=True):
+    __tablename__ = "configs"
+
+    config_id: str = Field(str, primary_key=True)
+    config_name: str = Field(str, nullable=False)
+    config_text: str = Field(str, nullable=False)
+
+    updated_at: datetime.datetime = Field(
+        default_factory=datetime.datetime.utcnow,
+        nullable=False,
+        sa_column_kwargs={"onupdate": datetime.datetime.utcnow}
+    )
+
+
+class JobRequest(SQLModel, table=True):
+    __tablename__ = "job_requests"
+
+    # You can apply the same fix to other fields too for cleaner code
+    job_id: str = Field(primary_key=True)
+    config_id: str = Field(foreign_key="configs.config_id")
+    device_serials: str = Field()  # No need for nullable=False, it's the default
+    status: str = Field()
+    created_at: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
+    updated_at: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
+
+    # The corrected field that caused the error
+    result_summary: str | None = Field(default=None, nullable=True)
 
 
 def create_tables():

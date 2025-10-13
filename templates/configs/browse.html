@@ -1,0 +1,90 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="d-flex justify-content-between mb-4">
+    <h2 class="h2">Trace Configurations</h2>
+    <a href="/configs/add" class="btn btn-primary" role="button">Add a Config</a>
+</div>
+<div class="row">
+    {% for config in configs %}
+    <div class="col-md-4 mb-3">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">{{ config.config_name }}</h5>
+                <p class="card-text text-muted small">
+                    <strong>ID:</strong> {{ config.config_id }}
+                </p>
+
+                <!-- Action buttons row -->
+                <div class="d-flex gap-2 mb-2">
+                    <a href="/configs/{{ config.config_id }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+
+                    <!-- Run on All Devices button -->
+                    <form method="post" action="/jobs/run" class="d-inline">
+                        <input type="hidden" name="config_id" value="{{ config.config_id }}">
+                        <input type="hidden" name="device_serials" value='{{ all_device_serials | tojson }}'>
+                        <button type="submit" class="btn btn-sm btn-success" title="Run on All Devices">
+                            <i class="fas fa-play"></i> All Devices
+                        </button>
+                    </form>
+
+                    <!-- Run on Single Device dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-warning dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                                aria-expanded="false" title="Run on Single Device">
+                            <i class="fas fa-play-circle"></i> Single Device
+                        </button>
+                        <ul class="dropdown-menu">
+                            {% for device in devices %}
+                            <li>
+                                <form method="post" action="/jobs/run" class="dropdown-item-form">
+                                    <input type="hidden" name="config_id" value="{{ config.config_id }}">
+                                    <input type="hidden" name="device_serials"
+                                           value='["{{ device.device_uuid or device.device_id }}"]'>
+                                    <button type="submit" class="dropdown-item">
+                                        <strong>{{ device.device_name }}</strong>
+                                        {% if device.device_uuid %}
+                                        <br><small class="text-muted">{{ device.device_uuid }}</small>
+                                        {% endif %}
+                                    </button>
+                                </form>
+                            </li>
+                            {% endfor %}
+                            {% if not devices %}
+                            <li><span class="dropdown-item text-muted">No devices available</span></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% if not configs %}
+<div class="alert alert-info">
+    No trace configurations found. Add one to get started!
+</div>
+{% endif %}
+
+<style>
+    .dropdown-item-form {
+        margin: 0;
+        padding: 0;
+    }
+
+    .dropdown-item-form .dropdown-item {
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        padding: 0.375rem 1rem;
+    }
+
+    .dropdown-item-form .dropdown-item:hover {
+        background-color: var(--bs-dropdown-link-hover-bg);
+        color: var(--bs-dropdown-link-hover-color);
+    }
+</style>
+{% endblock %}

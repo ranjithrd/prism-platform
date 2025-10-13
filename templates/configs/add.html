@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="d-flex justify-content-between mb-4">
+    <h2 class="h2">Add Trace Configuration</h2>
+    <a href="/configs" class="btn btn-secondary" role="button">Back to Configs</a>
+</div>
+<form method="post" action="/configs/add">
+    <div class="mb-3">
+        <label for="config_name" class="form-label">Configuration Name</label>
+        <input type="text" class="form-control" id="config_name" name="config_name" required>
+    </div>
+    <div class="mb-3">
+        <label for="config_text" class="form-label">Configuration Text (.pbtxt)</label>
+        <textarea class="form-control" id="config_text" name="config_text" rows="15" required></textarea>
+        <div class="form-text">Enter your Perfetto trace configuration in protobuf text format.</div>
+    </div>
+    <button type="submit" class="btn btn-primary">Add Configuration</button>
+    <a href="/configs" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}
+
