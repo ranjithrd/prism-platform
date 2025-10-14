@@ -76,6 +76,17 @@ def process_job_request(job_id: str, config_id: str, device_serials: list):
                     )
                 ).first()
 
+                # check if device is connected to host
+                if device and redis_client:
+                    device_status = redis_client.get_device_status(device_serial)
+                    if not device_status or device_status.get("status") != "online" or device_status.get(
+                            "current_host") != get_hostname():
+                        print(f"Device {device_serial} is not online or not connected to this host")
+                        send_job_update(redis_client, job_id, device_serial, "failed",
+                                        "Device is not online or not connected to this host")
+                        failure_count += 1
+                        continue
+
                 if not device:
                     print(f"Device {device_serial} not found in database")
                     if redis_client:
@@ -89,7 +100,7 @@ def process_job_request(job_id: str, config_id: str, device_serials: list):
                     send_job_update(redis_client, job_id, device_serial, "running",
                                     "Collecting trace...")
 
-                local_trace_path = run_perfetto_trace(device_serial, config, duration_seconds=30)
+                local_trace_path = run_perfetto_trace(device_serial, config, duration_seconds=10)
 
                 if not local_trace_path:
                     print(f"Failed to collect trace from {device_serial}")

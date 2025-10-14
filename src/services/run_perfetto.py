@@ -62,6 +62,10 @@ def run_perfetto_trace(device_serial: str, config: Config, duration_seconds: int
             adb_shell(f"rm {temp_config_path}", serial=device_serial)
             return None
 
+        print("Stdout:", stdout)
+        print("Success:", success)
+        print(f"Stderr: {stderr}")
+
         print(f"Trace completed. Pulling file from device...")
 
         local_trace_path = adb_pull(temp_trace_path, serial=device_serial)

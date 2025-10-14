@@ -18,6 +18,10 @@ def update_devices_in_redis():
     redis_client = get_redis_client()
     online_devices = []
     hostname = get_hostname()
+
+    print("Logging connected devices:")
+    print(devices)
+
     for device in devices:
         serial = device.get("serial")
         state = device.get("state")
