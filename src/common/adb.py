@@ -2,19 +2,24 @@ import logging
 import os
 import shutil
 import subprocess
-from typing import List, Optional, Tuple, Dict
+from typing import Dict, List, Optional, Tuple
 
 # Configure basic logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 # --- Pre-flight Check ---
 if not shutil.which("adb"):
-    logging.error("ADB command not found. Please ensure it is installed and in your system's PATH.")
+    logging.error(
+        "ADB command not found. Please ensure it is installed and in your system's PATH."
+    )
     # This won't stop execution, but will log a clear error on import.
     # A hard exit might be desired in some applications.
 
 
 # --- Internal Helper ---
+
 
 def _run_command(command: List[str]) -> Tuple[bool, str, str]:
     """
@@ -29,18 +34,18 @@ def _run_command(command: List[str]) -> Tuple[bool, str, str]:
     try:
         logging.info(f"Running command: {' '.join(command)}")
         process = subprocess.run(
-            command,
-            check=True,
-            capture_output=True,
-            text=True,
-            encoding='utf-8'
+            command, check=True, capture_output=True, text=True, encoding="utf-8"
         )
         return True, process.stdout.strip(), process.stderr.strip()
     except FileNotFoundError:
-        logging.error(f"Command not found: {command[0]}. Ensure it is installed and in PATH.")
+        logging.error(
+            f"Command not found: {command[0]}. Ensure it is installed and in PATH."
+        )
         return False, "", "Command not found."
     except subprocess.CalledProcessError as e:
-        logging.error(f"Command failed with exit code {e.returncode}: {' '.join(command)}")
+        logging.error(
+            f"Command failed with exit code {e.returncode}: {' '.join(command)}"
+        )
         logging.error(f"STDOUT: {e.stdout.strip()}")
         logging.error(f"STDERR: {e.stderr.strip()}")
         return False, e.stdout.strip(), e.stderr.strip()
@@ -55,6 +60,7 @@ def _add_serial(base_command: List[str], serial: Optional[str]) -> List[str]:
 
 # --- Public ADB Functions ---
 
+
 def adb_devices() -> List[Dict[str, str]]:
     """
     Lists all connected devices and their states.
@@ -63,25 +69,29 @@ def adb_devices() -> List[Dict[str, str]]:
         List[Dict[str, str]]: A list of dictionaries, each representing a device.
         Example: [{'serial': 'emulator-5554', 'state': 'device'}]
     """
-    success, stdout, _ = _run_command(["adb", "devices"])
-    if not success or not stdout:
+    try:
+        success, stdout, _ = _run_command(["adb", "devices"])
+        if not success or not stdout:
+            return []
+
+        lines = stdout.strip().split("\n")
+        # Skip the "List of devices attached" header
+        devices_lines = lines[1:]
+
+        devices = []
+        for line in devices_lines:
+            if not line.strip():
+                continue
+            try:
+                serial, state = line.split("\t")
+                devices.append({"serial": serial.strip(), "state": state.strip()})
+            except ValueError:
+                logging.warning(f"Could not parse device line: '{line}'")
+
+        return devices
+    except Exception as e:
+        logging.error(f"Error listing devices: {e}")
         return []
-
-    lines = stdout.strip().split('\n')
-    # Skip the "List of devices attached" header
-    devices_lines = lines[1:]
-
-    devices = []
-    for line in devices_lines:
-        if not line.strip():
-            continue
-        try:
-            serial, state = line.split('\t')
-            devices.append({"serial": serial.strip(), "state": state.strip()})
-        except ValueError:
-            logging.warning(f"Could not parse device line: '{line}'")
-
-    return devices
 
 
 def adb_shell(command: str, serial: Optional[str] = None) -> Tuple[bool, str, str]:
@@ -100,7 +110,9 @@ def adb_shell(command: str, serial: Optional[str] = None) -> Tuple[bool, str, st
     return _run_command(cmd)
 
 
-def adb_pull(remote_path: str, local_dir: str = ".cache/adb", serial: Optional[str] = None) -> Optional[str]:
+def adb_pull(
+        remote_path: str, local_dir: str = ".cache/adb", serial: Optional[str] = None
+) -> Optional[str]:
     """
     Pulls a file from a device to a local cache directory.
 
@@ -151,7 +163,10 @@ def adb_push(local_path: str, remote_path: str, serial: Optional[str] = None) ->
 
 # --- Common Utility Functions ---
 
-def adb_install(apk_path: str, reinstall: bool = True, serial: Optional[str] = None) -> bool:
+
+def adb_install(
+        apk_path: str, reinstall: bool = True, serial: Optional[str] = None
+) -> bool:
     """
     Installs an APK on a device.
 
@@ -208,3 +223,23 @@ def adb_reboot(serial: Optional[str] = None) -> bool:
     cmd = _add_serial(base_cmd, serial)
     success, _, _ = _run_command(cmd)
     return success
+
+
+def is_device_connected(serial: str) -> bool:
+    """
+    Checks if a device with the given serial is connected.
+
+    Args:
+        serial (str): The device serial to check.
+
+    Returns:
+        bool: True if the device is connected, False otherwise.
+    """
+    devices = adb_devices()
+
+    print("Detected devices:", devices)
+
+    for device in devices:
+        if device["serial"] == serial and device["state"] == "device":
+            return True
+    return False
