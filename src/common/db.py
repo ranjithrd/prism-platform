@@ -49,6 +49,8 @@ class Query(SQLModel, table=True):
     query_name: str = Field(str, nullable=False)
     query_text: str = Field(str, nullable=False)
 
+    configuration_id: str = Field(default=None, nullable=True, foreign_key="configs.config_id")
+
     updated_at: datetime.datetime = Field(
         default_factory=datetime.datetime.utcnow,
         nullable=False,
@@ -62,6 +64,7 @@ class Config(SQLModel, table=True):
     config_id: str = Field(str, primary_key=True)
     config_name: str = Field(str, nullable=False)
     config_text: str = Field(str, nullable=False)
+    tracing_tool: str = Field(str, nullable=True)
 
     updated_at: datetime.datetime = Field(
         default_factory=datetime.datetime.utcnow,
@@ -73,15 +76,13 @@ class Config(SQLModel, table=True):
 class JobRequest(SQLModel, table=True):
     __tablename__ = "job_requests"
 
-    # You can apply the same fix to other fields too for cleaner code
     job_id: str = Field(primary_key=True)
     config_id: str = Field(foreign_key="configs.config_id")
-    device_serials: str = Field()  # No need for nullable=False, it's the default
+    device_serials: str = Field()
     status: str = Field()
     created_at: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     updated_at: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
 
-    # The corrected field that caused the error
     result_summary: str | None = Field(default=None, nullable=True)
 
 
