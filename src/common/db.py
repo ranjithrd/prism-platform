@@ -3,8 +3,7 @@ import os
 from typing import Annotated
 
 from dotenv import load_dotenv
-from fastapi import Depends
-from sqlmodel import SQLModel, Field, create_engine, Session
+from sqlmodel import Field, Session, SQLModel, create_engine
 
 load_dotenv()
 
@@ -40,6 +39,12 @@ class Trace(SQLModel, table=True):
     trace_name: str = Field(str, nullable=False)
     device_id: str = Field(default=None, foreign_key="devices.device_id")
     host_name: str = Field(default=None, foreign_key="hosts.host_name")
+    configuration_id: str = Field(
+        default=None,
+        nullable=True,
+        foreign_key="configs.config_id",
+        sa_column_kwargs={"index": True},
+    )
 
 
 class Query(SQLModel, table=True):
@@ -49,12 +54,14 @@ class Query(SQLModel, table=True):
     query_name: str = Field(str, nullable=False)
     query_text: str = Field(str, nullable=False)
 
-    configuration_id: str = Field(default=None, nullable=True, foreign_key="configs.config_id")
+    configuration_id: str = Field(
+        default=None, nullable=True, foreign_key="configs.config_id"
+    )
 
     updated_at: datetime.datetime = Field(
         default_factory=datetime.datetime.utcnow,
         nullable=False,
-        sa_column_kwargs={"onupdate": datetime.datetime.utcnow}
+        sa_column_kwargs={"onupdate": datetime.datetime.utcnow},
     )
 
 
@@ -65,11 +72,12 @@ class Config(SQLModel, table=True):
     config_name: str = Field(str, nullable=False)
     config_text: str = Field(str, nullable=False)
     tracing_tool: str = Field(str, nullable=True)
+    default_duration: int = Field(int, nullable=True)
 
     updated_at: datetime.datetime = Field(
         default_factory=datetime.datetime.utcnow,
         nullable=False,
-        sa_column_kwargs={"onupdate": datetime.datetime.utcnow}
+        sa_column_kwargs={"onupdate": datetime.datetime.utcnow},
     )
 
 
@@ -80,6 +88,7 @@ class JobRequest(SQLModel, table=True):
     config_id: str = Field(foreign_key="configs.config_id")
     device_serials: str = Field()
     status: str = Field()
+    duration: int = Field(nullable=True)
     created_at: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     updated_at: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
 
@@ -95,4 +104,5 @@ def get_session():
         yield session
 
 
-SessionDep = Annotated[Session, Depends(get_session)]
+SessionDep = Annotated[Session, SQLModel]
+SessionDepType = Session

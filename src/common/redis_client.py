@@ -11,7 +11,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configure basic logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 # --- Type Definitions for Status Literals ---
 HostStatus = Literal["online", "offline"]
@@ -68,13 +70,10 @@ class RedisHelper:
         """
         try:
             key = self._get_host_key(host_id)
-            value = {
-                "status": status,
-                "last_seen": datetime.utcnow().isoformat()
-            }
-            self.client.set(key, json.dumps(value))
+            value = {"status": status, "last_seen": datetime.utcnow().isoformat()}
+            self.client.set(key, json.dumps(value), ex=60)
             logging.info(f"Updated host '{host_id}' status to '{status}'.")
-        except redis.exceptions.RedisError as exc:
+        except redis.RedisError as exc:
             logging.error(f"Error updating host status for '{host_id}': {exc}")
             raise
 
@@ -98,7 +97,9 @@ class RedisHelper:
             logging.error(f"Error getting host status for '{host_id}': {exc}")
             return None
 
-    def get_all_host_statuses(self, host_ids: Optional[List[str]] = None) -> Dict[str, Dict]:
+    def get_all_host_statuses(
+        self, host_ids: Optional[List[str]] = None
+    ) -> Dict[str, Dict]:
         """
         Retrieves the status records for all hosts.
 
@@ -117,7 +118,9 @@ class RedisHelper:
             if host_ids:
                 keys = [self._get_host_key(hid) for hid in host_ids]
             else:
-                keys = [key for key in self.client.scan_iter(match=f"{self.HOST_PREFIX}:*")]
+                keys = [
+                    key for key in self.client.scan_iter(match=f"{self.HOST_PREFIX}:*")
+                ]
 
             if not keys:
                 return {}
@@ -135,10 +138,7 @@ class RedisHelper:
     # --- Device Status Management ---
 
     def update_device_status(
-            self,
-            device_id: str,
-            status: DeviceStatus,
-            current_host: Optional[str] = None
+        self, device_id: str, status: DeviceStatus, current_host: Optional[str] = None
     ):
         """
         Sets or updates the status for a given device. If current_host is not provided,
@@ -157,7 +157,9 @@ class RedisHelper:
             value = {
                 "status": status,
                 "last_seen": datetime.utcnow().isoformat(),
-                "current_host": current_host if current_host is not None else existing_data.get("current_host")
+                "current_host": current_host
+                if current_host is not None
+                else existing_data.get("current_host"),
             }
             self.client.set(key, json.dumps(value))
             logging.info(f"Updated device '{device_id}' status to '{status}'.")
@@ -185,7 +187,9 @@ class RedisHelper:
             logging.error(f"Error getting device status for '{device_id}': {exc}")
             return None
 
-    def get_all_device_statuses(self, device_ids: Optional[List[str]] = None) -> Dict[str, Dict]:
+    def get_all_device_statuses(
+        self, device_ids: Optional[List[str]] = None
+    ) -> Dict[str, Dict]:
         """
         Retrieves the status records for all devices.
 
@@ -204,7 +208,10 @@ class RedisHelper:
             if device_ids:
                 keys = [self._get_device_key(did) for did in device_ids]
             else:
-                keys = [key for key in self.client.scan_iter(match=f"{self.DEVICE_PREFIX}:*")]
+                keys = [
+                    key
+                    for key in self.client.scan_iter(match=f"{self.DEVICE_PREFIX}:*")
+                ]
 
             if not keys:
                 return {}

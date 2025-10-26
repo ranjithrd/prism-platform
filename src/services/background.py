@@ -1,7 +1,9 @@
 import json
 import os
+import threading
 import uuid
 from datetime import datetime, timezone
+from time import sleep
 
 from sqlmodel import Session, select
 
@@ -11,27 +13,14 @@ from src.common.hostname import get_hostname
 from src.common.minio import MinioHelper
 from src.common.redis_client import get_redis_client
 from src.services.run_perfetto import run_perfetto_trace
+from src.services.startup import update_devices_in_redis
 
 JOB_REQUEST_STREAM_NAME = "job_requests"
-LOCK_FILE_PATH = ".cache/background_worker.lock"
-LAST_MESSAGE_ID_FILE = ".cache/last_message_id.txt"
-
-# Track last message ID - loaded ONCE on module import
-os.makedirs(".cache", exist_ok=True)
-if os.path.exists(LAST_MESSAGE_ID_FILE):
-    try:
-        with open(LAST_MESSAGE_ID_FILE, "r") as f:
-            LAST_MESSAGE_ID = f.read().strip() or "0"
-            print(f"[BACKGROUND] Resuming from message ID: {LAST_MESSAGE_ID}")
-    except:
-        LAST_MESSAGE_ID = "0"
-        print("[BACKGROUND] Starting fresh with 0 (will read all messages)")
-else:
-    LAST_MESSAGE_ID = "0"
-    print("[BACKGROUND] First run, using 0 to read all messages")
 
 
-def process_job_request(job_id: str, config_id: str, device_serials: list):
+def process_job_request(
+    job_id: str, config_id: str, device_serials: list, duration: int
+):
     """
     Process a single job request by running perfetto traces on specified devices.
 
@@ -104,9 +93,9 @@ def process_job_request(job_id: str, config_id: str, device_serials: list):
                 if device and redis_client:
                     device_status = redis_client.get_device_status(device_serial)
                     if (
-                            not device_status
-                            or device_status.get("status") != "online"
-                            or device_status.get("current_host") != get_hostname()
+                        not device_status
+                        or device_status.get("status") != "online"
+                        or device_status.get("current_host") != get_hostname()
                     ):
                         print(
                             f"Device {device_serial} is not online or not connected to this host"
@@ -145,7 +134,7 @@ def process_job_request(job_id: str, config_id: str, device_serials: list):
                     )
 
                 local_trace_path = run_perfetto_trace(
-                    device_serial, config, duration_seconds=10
+                    device_serial, config, duration_seconds=duration
                 )
 
                 if not local_trace_path:
@@ -190,6 +179,7 @@ def process_job_request(job_id: str, config_id: str, device_serials: list):
                     trace_timestamp=datetime.now(timezone.utc),
                     trace_filename=minio_filename,
                     host_name=get_hostname(),
+                    configuration_id=config.config_id,
                 )
                 session.add(trace)
                 session.commit()
@@ -258,7 +248,7 @@ def process_job_request(job_id: str, config_id: str, device_serials: list):
 
 
 def update_job_status(
-        session: Session, job_id: str, status: str, result_summary: str = None
+    session: Session, job_id: str, status: str, result_summary: str = None
 ):
     """Update the job request status in the database."""
     job = session.exec(select(JobRequest).where(JobRequest.job_id == job_id)).first()
@@ -272,12 +262,12 @@ def update_job_status(
 
 
 def send_job_update(
-        redis_client,
-        job_id: str,
-        device_serial: str,
-        status: str,
-        message: str = "",
-        trace_id: str = None,
+    redis_client,
+    job_id: str,
+    device_serial: str,
+    status: str,
+    message: str = "",
+    trace_id: str = None,
 ):
     """Send a job update to Redis stream."""
     if not redis_client or not redis_client.client:
@@ -313,77 +303,49 @@ def background_task():
         return
 
     try:
-        # Read new messages from the job request stream
-        # Get the current position from Redis (shared across all workers)
         try:
-            saved_position = redis_client.client.get("job_processor_position")
-            if saved_position:
-                current_position = (
-                    saved_position.decode("utf-8")
-                    if isinstance(saved_position, bytes)
-                    else saved_position
-                )
-            else:
-                current_position = "0"
-        except:
-            current_position = "0"
+            # Read new messages from the job request stream
+            redis_client = get_redis_client()
 
-        # Read new messages from the job request stream
-        try:
-            streams = redis_client.client.xread(
-                {JOB_REQUEST_STREAM_NAME: current_position},
-                count=1,  # Only read ONE message at a time
-                block=1000,  # Block for 1 second
-            )
-        except Exception as e:
-            print(f"[BACKGROUND] Error reading from Redis: {e}")
-            return
+            if not redis_client or not redis_client.client:
+                print("[BACKGROUND] Redis client not available")
+                return
 
-        if not streams:
-            return
-
-        for stream_name, messages in streams:
-            for message_id, fields in messages:
+            pubsub = redis_client.client.pubsub()
+            pubsub.subscribe(JOB_REQUEST_STREAM_NAME)
+            for i in pubsub.listen():
+                print("Received message from pubsub:", i)
+                data = i["data"]
                 try:
-                    # Try to acquire a lock for THIS specific message using Redis SETNX
-                    lock_key = f"job_lock:{message_id}"
+                    decoded_fields = json.loads(data)
+                    print("Decoded message data as JSON:", decoded_fields)
 
-                    # Try to set the lock (expires in 60 seconds as safety)
-                    # SETNX returns 1 if lock acquired, 0 if already exists
-                    lock_acquired = redis_client.client.set(
-                        lock_key, os.getpid(), nx=True, ex=60
-                    )
-
-                    if not lock_acquired:
+                    is_job = decoded_fields.get("job_id") is not None
+                    if is_job:
                         print(
-                            f"[BACKGROUND] Worker {os.getpid()} - job {message_id} already being processed by another worker"
+                            "Received job request with id: ",
+                            decoded_fields.get("job_id"),
                         )
-                        continue
-
-                    print(
-                        f"[BACKGROUND] Worker {os.getpid()} acquired lock for message {message_id}"
-                    )
-
-                    # Decode bytes to strings if needed
-                    decoded_fields = {}
-                    for key, value in fields.items():
-                        if isinstance(key, bytes):
-                            key = key.decode("utf-8")
-                        if isinstance(value, bytes):
-                            value = value.decode("utf-8")
-                        decoded_fields[key] = value
 
                     job_id = decoded_fields.get("job_id")
                     config_id = decoded_fields.get("config_id")
                     devices = decoded_fields.get("devices")
+                    duration = decoded_fields.get("duration", 10)
+
+                    print("Job duration: ", duration)
+
+                    if isinstance(duration, str):
+                        try:
+                            duration = int(duration)
+                        except ValueError:
+                            duration = 10
+
+                    print("Parsed duration: ", duration)
 
                     if not all([job_id, config_id, devices]):
                         print(
                             f"[BACKGROUND] Invalid job request message: {decoded_fields}"
                         )
-                        # Release lock and update position
-                        redis_client.client.delete(lock_key)
-                        redis_client.client.set("job_processor_position", message_id)
                         continue
 
                     # Parse device list
@@ -396,12 +358,11 @@ def background_task():
                         f"[BACKGROUND] Worker {os.getpid()} processing job {job_id} with config {config_id} for devices {device_serials}"
                     )
 
-                    # Process the job request IN A SEPARATE THREAD to avoid worker timeout
-                    import threading
-
                     def process_in_thread():
                         try:
-                            process_job_request(job_id, config_id, device_serials)
+                            process_job_request(
+                                job_id, config_id, device_serials, duration
+                            )
                         except Exception as e:
                             print(
                                 f"[BACKGROUND] Error in thread processing job {job_id}: {e}"
@@ -409,15 +370,6 @@ def background_task():
                             import traceback
 
                             traceback.print_exc()
-                        finally:
-                            # Release the lock after processing
-                            try:
-                                redis_client.client.delete(lock_key)
-                                print(
-                                    f"[BACKGROUND] Worker {os.getpid()} released lock for job {job_id}"
-                                )
-                            except:
-                                pass
 
                     thread = threading.Thread(target=process_in_thread, daemon=True)
                     thread.start()
@@ -425,20 +377,42 @@ def background_task():
                         f"[BACKGROUND] Worker {os.getpid()} started thread for job {job_id}"
                     )
 
-                    # Update position in Redis IMMEDIATELY so other workers skip this message
-                    redis_client.client.set("job_processor_position", message_id)
-                    print(
-                        f"[BACKGROUND] Worker {os.getpid()} updated position to {message_id}"
-                    )
+                except Exception:
+                    print("[BACKGROUND] Failed to read or process message:", data)
+                    continue
 
-                except Exception as e:
-                    print(f"[BACKGROUND] Error processing message {message_id}: {e}")
-                    import traceback
+            print("[BACKGROUND] Exiting pubsub listener loop...")
 
-                    traceback.print_exc()
+        except Exception as e:
+            print(f"[BACKGROUND] Error reading from Redis: {e}")
+
+        print("[BACKGROUND] Completed Redis pubsub listener...")
+        return
 
     except Exception as e:
         print(f"[BACKGROUND] Error in background task for worker {os.getpid()}: {e}")
         import traceback
 
         traceback.print_exc()
+
+
+def run_update_devices():
+    """
+    A wrapper that runs the imported background task every 5 seconds.
+    """
+    while True:
+        try:
+            print(f"[{datetime.now().strftime('%X')}] Updating devices...")
+            update_devices_in_redis()
+            sleep(5)
+        except Exception as e:
+            print(f"An error occurred in the periodic task: {e}")
+            sleep(5)
+
+
+def run_listen_pubsub():
+    """
+    A wrapper that runs the imported background task to listen to Redis pubsub.
+    """
+    print("Running Redis pubsub listener...")
+    background_task()

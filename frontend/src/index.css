@@ -1,0 +1,30 @@
+@import "tailwindcss";
+@plugin './hero.ts';
+@source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+
+:root {
+	font-family: "Hanken Grotesk", system-ui, Avenir, Helvetica, Arial, sans-serif;
+	line-height: 1.5;
+	font-weight: 400;
+
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+a,
+button {
+	cursor: pointer;
+}
+
+.clip-margin {
+	overflow-clip-margin: 5rem;
+}
+
+.focus-none:focus {
+	outline: none;
+	box-shadow: none;
+	clip-path: none;
+	border: none;
+}

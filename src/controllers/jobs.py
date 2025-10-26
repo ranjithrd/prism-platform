@@ -1,10 +1,10 @@
 import json
 
-from fastapi import APIRouter, Depends, Request, Form
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from sqlmodel import select
 
-from src.common.db import get_session, Config
+from src.common.db import Config, get_session
 from src.common.templates import templates
 from src.services.job_requests import JobRequestService
 
@@ -23,11 +23,13 @@ def view_job_result(request: Request, job_id: str, session=Depends(get_session))
             context={
                 "request": request,
                 "error": "Job request not found",
-            }
+            },
         )
 
     # Get config details
-    config = session.exec(select(Config).where(Config.config_id == job_request.config_id)).first()
+    config = session.exec(
+        select(Config).where(Config.config_id == job_request.config_id)
+    ).first()
 
     # Get devices involved
     devices = job_service.get_all_devices_for_job(job_request)
@@ -41,7 +43,7 @@ def view_job_result(request: Request, job_id: str, session=Depends(get_session))
             "config": config,
             "devices": devices,
             "device_serials": device_serials,
-        }
+        },
     )
 
 
@@ -51,7 +53,7 @@ def job_updates_stream(job_id: str, session=Depends(get_session)):
     job_service = JobRequestService(session)
 
     def event_stream():
-        yield "data: {\"type\": \"connected\"}\n\n"
+        yield 'data: {"type": "connected"}\n\n'
 
         for update in job_service.get_job_updates_stream(job_id):
             yield update
@@ -62,18 +64,19 @@ def job_updates_stream(job_id: str, session=Depends(get_session)):
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
-            "X-Accel-Buffering": "no"
-        }
+            "X-Accel-Buffering": "no",
+        },
     )
 
 
 @app.post("/jobs/run")
 async def create_job_request(
-        request: Request,
-        config_id: str = Form(...),
-        device_serials: str = Form(...),  # JSON string or comma-separated
-        redirect_url: str = Form(None),
-        session=Depends(get_session)
+    request: Request,
+    config_id: str = Form(...),
+    device_serials: str = Form(...),  # JSON string or comma-separated
+    duration: int = Form(15),
+    redirect_url: str = Form(None),
+    session=Depends(get_session),
 ):
     """Create a new job request"""
     try:
@@ -85,22 +88,26 @@ async def create_job_request(
 
         # Try to parse as JSON first
         try:
-            if device_serials.startswith('['):
+            if device_serials.startswith("["):
                 serials_list = json.loads(device_serials)
             else:
                 # Comma-separated format
-                serials_list = [s.strip() for s in device_serials.split(',') if s.strip()]
-        except json.JSONDecodeError as e:
+                serials_list = [
+                    s.strip() for s in device_serials.split(",") if s.strip()
+                ]
+        except json.JSONDecodeError:
             # If JSON parsing fails, treat as comma-separated
-            serials_list = [s.strip() for s in device_serials.split(',') if s.strip()]
+            serials_list = [s.strip() for s in device_serials.split(",") if s.strip()]
 
         if not serials_list:
             raise ValueError("No valid device serials after parsing")
 
-        print(f"Creating job request for config {config_id} with devices: {serials_list}")
+        print(
+            f"Creating job request for config {config_id} with devices: {serials_list}"
+        )
 
         job_service = JobRequestService(session)
-        job_request = job_service.create_job_request(config_id, serials_list)
+        job_request = job_service.create_job_request(config_id, serials_list, duration)
 
         # Always redirect to the job result page to see real-time updates
         return RedirectResponse(f"/jobs/{job_request.job_id}", status_code=303)
@@ -108,6 +115,7 @@ async def create_job_request(
     except Exception as e:
         print(f"Error creating job request: {e}")
         import traceback
+
         traceback.print_exc()
         session.rollback()
         return templates.TemplateResponse(
@@ -115,5 +123,5 @@ async def create_job_request(
             context={
                 "request": request,
                 "error": f"Failed to create job request: {str(e)}",
-            }
+            },
         )
