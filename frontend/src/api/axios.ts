@@ -11,6 +11,7 @@ export const AXIOS_INSTANCE = Axios.create({
 	headers: {
 		"Content-Type": "application/json",
 	},
+	withCredentials: true,
 })
 
 AXIOS_INSTANCE.interceptors.response.use(
