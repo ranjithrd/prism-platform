@@ -15,7 +15,10 @@ export function useJobResultStream(jobId: string) {
 
 	useEffect(() => {
 		const eventSource = new EventSource(
-			`${AXIOS_INSTANCE.defaults.baseURL}/v1/api/requests/${jobId}/stream`
+			`${AXIOS_INSTANCE.defaults.baseURL}/v1/api/requests/${jobId}/stream`,
+			{
+				withCredentials: true,
+			}
 		)
 
 		eventSource.onopen = () => {

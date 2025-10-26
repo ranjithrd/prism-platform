@@ -70,7 +70,10 @@ export function QueryResult({
 }) {
 	async function handleExport(format: "csv" | "tsv" | "json") {
 		const response = await fetch(
-			`${AXIOS_INSTANCE.defaults.baseURL}/v1/api/results/${traceId}/${query.query_id}/export?file_format=${format}`
+			`${AXIOS_INSTANCE.defaults.baseURL}/v1/api/results/${traceId}/${query.query_id}/export?file_format=${format}`,
+			{
+				credentials: "include",
+			}
 		)
 		if (!response.ok) {
 			alert("Failed to export data")
@@ -80,7 +83,9 @@ export function QueryResult({
 		const url = window.URL.createObjectURL(blob)
 		const a = document.createElement("a")
 		a.href = url
-		a.download = `${query.query_name || "query_result"} ${traceId}.${format}`
+		a.download = `${
+			query.query_name || "query_result"
+		} ${traceId}.${format}`
 		document.body.appendChild(a)
 		a.click()
 		a.remove()

@@ -14,14 +14,18 @@ export function GroupQueryResultTable({
 	traceIds: string
 }) {
 	const { data: queryResultData, isLoading } =
-		useGetJsonResultV1ApiGroupResultsQueryIdJsonGet(queryId, {
-			trace_ids: traceIds,
-		}, {
-			swr: {
-				revalidateOnFocus: false,
-				revalidateIfStale: false,
+		useGetJsonResultV1ApiGroupResultsQueryIdJsonGet(
+			queryId,
+			{
+				trace_ids: traceIds,
 			},
-		})
+			{
+				swr: {
+					revalidateOnFocus: false,
+					revalidateIfStale: false,
+				},
+			}
+		)
 
 	const columns = useMemo(() => {
 		// @ts-expect-error: columns type inference
@@ -73,6 +77,9 @@ export function GroupQueryResult({
 	async function handleExport(format: "csv" | "tsv" | "json") {
 		const response = await fetch(
 			`${AXIOS_INSTANCE.defaults.baseURL}/v1/api/group_results/${query.query_id}/export?file_format=${format}&trace_ids=${traceIds}`,
+			{
+				credentials: "include",
+			}
 		)
 		if (!response.ok) {
 			alert("Failed to export data")
@@ -82,7 +89,9 @@ export function GroupQueryResult({
 		const url = window.URL.createObjectURL(blob)
 		const a = document.createElement("a")
 		a.href = url
-		a.download = `${query.query_name || "query_result"} ${traceIds}.${format}`
+		a.download = `${
+			query.query_name || "query_result"
+		} ${traceIds}.${format}`
 		document.body.appendChild(a)
 		a.click()
 		a.remove()
