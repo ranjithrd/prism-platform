@@ -13,6 +13,7 @@ class WorkerAPIClient:
 
     def __init__(self):
         self.timeout = 30.0
+        self.last_auth_error = None  # Track authentication errors
         worker_config.refresh_config()
 
         logger.info(
@@ -30,11 +31,17 @@ class WorkerAPIClient:
             with httpx.Client(timeout=self.timeout) as client:
                 response = client.request(method, url, headers=headers, **kwargs)
                 response.raise_for_status()
+                self.last_auth_error = None  # Clear error on success
                 return response.json() if response.content else None
         except httpx.HTTPStatusError as e:
-            logger.error(
-                f"HTTP {e.response.status_code} error calling {method} {url}: {e.response.text}"
-            )
+            if e.response.status_code == 401:
+                # Authentication error - store it
+                self.last_auth_error = "Invalid API token - please update in GUI"
+                logger.error(f"Authentication failed: {e.response.text}")
+            else:
+                logger.error(
+                    f"HTTP {e.response.status_code} error calling {method} {url}: {e.response.text}"
+                )
             return None
         except httpx.RequestError as e:
             logger.error(f"Request error calling {method} {url}: {str(e)}")

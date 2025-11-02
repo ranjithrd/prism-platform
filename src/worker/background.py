@@ -2,7 +2,6 @@ import os
 import threading
 import uuid
 from datetime import datetime, timezone
-from time import sleep
 
 from src.common.adb import adb_devices, is_device_connected
 from src.common.hostname import get_hostname
@@ -12,13 +11,44 @@ from .run_perfetto import run_perfetto_trace
 
 JOB_REQUEST_STREAM_NAME = "job_requests"
 
+# Global shutdown event to signal threads to stop
+_shutdown_event = threading.Event()
+
+# Global GUI callback for device updates
+_gui_device_callback = None
+
+# Global GUI callback for error notifications
+_gui_error_callback = None
+
+# Track devices currently tracing - set of device UUIDs
+_tracing_devices = set()
+
+
+def register_gui_callback(callback):
+    """Register a callback function for GUI device updates.
+
+    Args:
+        callback: Function that takes a list of tuples (serial, status, extra_info)
+    """
+    global _gui_device_callback
+    _gui_device_callback = callback
+    print("[GUI] Device update callback registered")
+
+
+def register_error_callback(callback):
+    """Register a callback function for error notifications.
+
+    Args:
+        callback: Function that takes an error message string
+    """
+    global _gui_error_callback
+    _gui_error_callback = callback
+    print("[GUI] Error callback registered")
+
 
 def update_device_statuses():
     """Update device statuses in the database based on ADB connections.
-
-    Note: Device management is currently a stub in worker_api.py.
-    This function is kept for future implementation when device
-    management is fully integrated with the API.
+    Also notifies GUI if callback is registered.
     """
     devices = adb_devices()
     online_devices = []
@@ -30,10 +60,20 @@ def update_device_statuses():
     db_devices = client.get_existing_devices()
     print(db_devices)
 
+    # Prepare GUI update list
+    gui_device_list = []
+
     for device in devices:
         serial = device.get("serial")
         state = device.get("state")
         if serial and state:
+            # Skip devices that are currently tracing - don't overwrite their status
+            if serial in _tracing_devices:
+                continue
+
+            # Add to GUI list
+            gui_device_list.append((serial, state, None))
+
             existing_device = next(
                 (
                     d
@@ -73,6 +113,20 @@ def update_device_statuses():
             client.update_device(db_device["device_id"], db_device)
             print(f"Marked device as offline in DB: {db_device['device_name']}")
 
+    # Check for authentication errors and notify GUI
+    if _gui_error_callback and client.last_auth_error:
+        try:
+            _gui_error_callback(client.last_auth_error)
+        except Exception as e:
+            print(f"[GUI] Error calling error callback: {e}")
+
+    # Notify GUI if callback is registered
+    if _gui_device_callback:
+        try:
+            _gui_device_callback(gui_device_list)
+        except Exception as e:
+            print(f"[GUI] Error calling device callback: {e}")
+
 
 def process_job_device(
     job_device_id: str,
@@ -105,14 +159,11 @@ def process_job_device(
         print(f"Device {device_uuid} connected to this host: {device_connected}")
 
         if not device_connected:
-            print(f"Device {device_uuid} is not connected to this host. Skipping.")
-            client.update_job_device_status(job_device_id, "failed")
-            client.send_job_update(
-                job_id,
-                device_id,
-                "failed",
-                f"Device {device_uuid} not connected to this host",
+            print(
+                f"Device {device_uuid} is not connected to this host. Ignoring - another worker may handle it."
             )
+            # Don't mark as failed - just silently ignore
+            # Another worker with this device connected may pick it up
             return
 
         # Get config via API
@@ -128,6 +179,24 @@ def process_job_device(
         print(
             f"Processing job {job_id} for device {device_uuid} with config {config.get('config_name', 'config')}"
         )
+
+        # Mark device as tracing to prevent regular poll from overwriting status
+        _tracing_devices.add(device_uuid)
+
+        # Notify GUI that device is tracing - instant update
+        if _gui_device_callback:
+            try:
+                _gui_device_callback(
+                    [
+                        (
+                            device_uuid,
+                            "tracing",
+                            f"Tracing: {config.get('config_name', 'config')}",
+                        )
+                    ]
+                )
+            except Exception as e:
+                print(f"[GUI] Error calling tracing callback: {e}")
 
         # Send status updates
         client.send_job_update(
@@ -208,11 +277,25 @@ def process_job_device(
             trace_id=trace_id,
         )
 
+        # Remove from tracing set
+        _tracing_devices.discard(device_uuid)
+
+        # Notify GUI immediately that device is back to available - instant update
+        if _gui_device_callback:
+            try:
+                _gui_device_callback([(device_uuid, "available", None)])
+                print(f"[GUI] Notified device {device_uuid} back to available")
+            except Exception as e:
+                print(f"[GUI] Error calling available callback: {e}")
+
     except Exception as e:
         print(f"Error processing job_device {job_device_id}: {e}")
         import traceback
 
         traceback.print_exc()
+
+        # Remove from tracing set on error
+        _tracing_devices.discard(device_uuid)
 
         client = get_worker_client()
         client.update_job_device_status(job_device_id, "failed")
@@ -222,6 +305,16 @@ def process_job_device(
             "failed",
             f"Error: {str(e)}",
         )
+
+        # Notify GUI immediately that device is back to available after error - instant update
+        if _gui_device_callback:
+            try:
+                _gui_device_callback([(device_uuid, "available", None)])
+                print(
+                    f"[GUI] Notified device {device_uuid} back to available after error"
+                )
+            except Exception as callback_err:
+                print(f"[GUI] Error calling available callback: {callback_err}")
 
 
 def background_task():
@@ -296,23 +389,40 @@ def background_task():
 def run_update_devices():
     """
     A wrapper that runs the imported background task every 5 seconds.
+    Uses threading.Event for faster, interruptible shutdown.
     """
-    while True:
+    while not _shutdown_event.is_set():
         try:
             print(f"[{datetime.now().strftime('%X')}] Updating devices...")
             update_device_statuses()
-            sleep(5)
         except Exception as e:
             print(f"An error occurred in the periodic task: {e}")
-            sleep(5)
+
+        # Wait 5 seconds or until shutdown is signaled (whichever comes first)
+        _shutdown_event.wait(timeout=5)
+
+    print("Device update thread stopped.")
 
 
 def run_listen_pubsub():
+    """
+    Polls for pending jobs every 5 seconds.
+    Uses threading.Event for faster, interruptible shutdown.
+    """
     print("Running pubsub listener...")
-    while True:
+    while not _shutdown_event.is_set():
         try:
             background_task()
-            sleep(5)
         except Exception as e:
             print(f"An error occurred in the pubsub listener: {e}")
-            sleep(5)
+
+        # Wait 5 seconds or until shutdown is signaled (whichever comes first)
+        _shutdown_event.wait(timeout=5)
+
+    print("Pubsub listener thread stopped.")
+
+
+def signal_shutdown():
+    """Signal all background threads to stop."""
+    print("Signaling background threads to shutdown...")
+    _shutdown_event.set()
