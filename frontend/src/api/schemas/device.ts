@@ -5,9 +5,15 @@
  * API for managing traces, configurations, devices, and queries
  * OpenAPI spec version: 1.0.0
  */
+import type { DeviceLastStatus } from './deviceLastStatus';
+import type { DeviceLastSeen } from './deviceLastSeen';
+import type { DeviceHost } from './deviceHost';
 
 export interface Device {
   device_id?: string;
   device_name?: string;
   device_uuid?: string;
+  last_status?: DeviceLastStatus;
+  last_seen?: DeviceLastSeen;
+  host?: DeviceHost;
 }

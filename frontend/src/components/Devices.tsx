@@ -28,9 +28,9 @@ const columns = (
 			nullValue: "Disconnected",
 		},
 		{
-			key: "status",
+			key: "last_status",
 			label: "Status",
-			render: (device) => toTitleCase(device.status) ?? "Disconnected",
+			render: (device) => toTitleCase(device.last_status) ?? "Disconnected",
 			nullValue: "Disconnected",
 		},
 		onEdit && {

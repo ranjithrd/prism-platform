@@ -6,8 +6,9 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface HostWithStatus {
-  host_name?: string;
-  last_seen?: string;
-  status: string;
+export interface TraceCreateResponse {
+  trace_id: string;
+  trace_name: string;
+  trace_timestamp: string;
+  trace_filename: string;
 }

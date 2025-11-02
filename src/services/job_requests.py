@@ -5,33 +5,38 @@ from typing import List, Optional
 
 from sqlmodel import Session, select
 
-from src.common.db import Device, JobRequest
-from src.common.redis_client import get_redis_client
+from src.common.db import Device, JobDevice, JobRequest, JobUpdate
 
 JOB_REQUEST_STREAM_NAME = "job_requests"
 
 
 class JobRequestService:
-    """Service for managing job requests and Redis stream operations"""
+    """Service for managing job requests using PostgreSQL only"""
 
     def __init__(self, session: Session):
         self.session = session
-        self.redis_client = get_redis_client()
 
     def create_job_request(
         self, config_id: str, device_ids: List[str], duration: int
     ) -> JobRequest:
-        """Create a new job request and send it to Redis stream"""
+        """Create a new job request and send it to db"""
         job_id = str(uuid.uuid4())
 
         # Create job request in database
         job_request = JobRequest(
             job_id=job_id,
             config_id=config_id,
-            device_serials=json.dumps(device_ids),
             status="pending",
             duration=duration,
         )
+
+        for device_id in device_ids:
+            job_request.job_devices.append(
+                JobDevice(
+                    job_id=job_id,
+                    device_id=device_id,
+                )
+            )
 
         device_serials = []
         devices = self.session.exec(
@@ -43,23 +48,6 @@ class JobRequestService:
         self.session.add(job_request)
         self.session.commit()
         self.session.refresh(job_request)
-
-        # Send to Redis stream
-        if self.redis_client:
-            stream_data = {
-                "job_id": job_id,
-                "config_id": config_id,
-                "devices": json.dumps(device_serials),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "duration": duration,
-            }
-
-            try:
-                self.redis_client.client.publish(
-                    JOB_REQUEST_STREAM_NAME, json.dumps(stream_data)
-                )
-            except Exception as e:
-                print(f"Failed to send job request to Redis stream: {e}")
 
         return job_request
 
@@ -84,44 +72,49 @@ class JobRequestService:
             self.session.commit()
 
     def get_job_updates_stream(self, job_id: str):
-        """Generator for job updates from Redis stream"""
-        if not self.redis_client:
-            # Send heartbeat even without Redis to keep connection alive
-            import time
-
-            while True:
-                yield f"data: {json.dumps({'type': 'heartbeat'})}\n\n"
-                time.sleep(5)
-            return
-
-        stream_key = f"{JOB_REQUEST_STREAM_NAME}:{job_id}"
-        last_id = "0"
+        """Generator for job updates from PostgreSQL JobUpdate table."""
+        last_timestamp = datetime.min.replace(tzinfo=timezone.utc)
         no_data_count = 0
         max_no_data = 60  # Close after 60 heartbeats with no data (5 minutes)
 
         while True:
             try:
-                # Read from stream with timeout
-                streams = self.redis_client.client.xread(
-                    {stream_key: last_id}, block=1000
-                )
+                from sqlmodel import col
 
-                if streams:
+                # Query for new updates since last timestamp
+                updates = self.session.exec(
+                    select(JobUpdate)
+                    .where(col(JobUpdate.job_id) == job_id)
+                    .where(col(JobUpdate.timestamp) > last_timestamp)
+                    .order_by(col(JobUpdate.timestamp))
+                ).all()
+
+                if updates:
                     no_data_count = 0  # Reset counter when we get data
-                    for stream_name, messages in streams:
-                        for message_id, fields in messages:
-                            last_id = message_id
+                    for update in updates:
+                        last_timestamp = update.timestamp
 
-                            # Decode bytes if needed
-                            decoded_fields = {}
-                            for key, value in fields.items():
-                                if isinstance(key, bytes):
-                                    key = key.decode("utf-8")
-                                if isinstance(value, bytes):
-                                    value = value.decode("utf-8")
-                                decoded_fields[key] = value
+                        # Get device info for the update
+                        device = self.session.exec(
+                            select(Device).where(
+                                col(Device.device_id) == update.device_id
+                            )
+                        ).first()
 
-                            yield f"data: {json.dumps(decoded_fields)}\n\n"
+                        update_data = {
+                            "device_id": update.device_id,
+                            "device_serial": device.device_uuid
+                            if device
+                            else update.device_id,
+                            "status": update.status,
+                            "message": update.message or "",
+                            "timestamp": update.timestamp.isoformat(),
+                        }
+
+                        if update.trace_id:
+                            update_data["trace_id"] = update.trace_id
+
+                        yield f"data: {json.dumps(update_data)}\n\n"
                 else:
                     # Send heartbeat to keep connection alive
                     no_data_count += 1
@@ -132,8 +125,13 @@ class JobRequestService:
                         print(f"Closing SSE stream for job {job_id} due to inactivity")
                         break
 
+                # Sleep briefly before checking again
+                import time
+
+                time.sleep(1)
+
             except Exception as e:
-                print(f"Error reading from Redis stream: {e}")
+                print(f"Error reading job updates: {e}")
                 import traceback
 
                 traceback.print_exc()
@@ -144,38 +142,37 @@ class JobRequestService:
     def send_job_update(
         self,
         job_id: str,
-        device_serial: str,
+        device_id: str,
         status: str,
         message: str = "",
         trace_id: Optional[str] = None,
     ):
-        """Send a job update to the Redis stream"""
-        if not self.redis_client:
-            return
-
-        stream_key = f"{JOB_REQUEST_STREAM_NAME}:{job_id}"
-        update_data = {
-            "device_serial": device_serial,
-            "status": status,
-            "message": message,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        }
-
-        if trace_id:
-            update_data["trace_id"] = trace_id
-
+        """Send a job update by inserting into JobUpdate table."""
         try:
-            self.redis_client.client.xadd(stream_key, update_data)
+            update = JobUpdate(
+                update_id=str(uuid.uuid4()),
+                job_id=job_id,
+                device_id=device_id,
+                status=status,
+                message=message,
+                timestamp=datetime.now(timezone.utc),
+                trace_id=trace_id,
+            )
+            self.session.add(update)
+            self.session.commit()
         except Exception as e:
-            print(f"Failed to send job update to Redis stream: {e}")
+            print(f"Failed to create job update in database: {e}")
+            self.session.rollback()
 
     def get_all_devices_for_job(self, job_request: JobRequest) -> List[Device]:
-        """Get all devices involved in a job request"""
-        device_serials = json.loads(job_request.device_serials)
+        """Get all devices involved in a job request via JobDevice table."""
+        device_ids = [jd.device_id for jd in job_request.job_devices]
+        if not device_ids:
+            return []
+
+        from sqlmodel import col
+
         devices = self.session.exec(
-            select(Device).where(
-                Device.device_uuid.in_(device_serials)
-                | Device.device_id.in_(device_serials)
-            )
+            select(Device).where(col(Device.device_id).in_(device_ids))
         ).all()
         return list(devices)

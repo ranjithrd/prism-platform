@@ -6,8 +6,4 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface HostWithStatus {
-  host_name?: string;
-  last_seen?: string;
-  status: string;
-}
+export type ConfigResponseDefaultDuration = number | null;

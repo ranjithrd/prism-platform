@@ -1,4 +1,3 @@
-import json
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -6,7 +5,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlmodel import select
 
-from src.common.db import Config, SessionDepType, get_session
+from src.common.db import Config, Device, SessionDepType, get_session
 from src.services.job_requests import JobRequestService
 
 router = APIRouter(prefix="/v1/api/requests", tags=["requests"])
@@ -50,11 +49,14 @@ def create_job_request(
     job_request = job_service.create_job_request(
         request.config_id, request.devices, request.duration
     )
+    device_serials = session.exec(
+        select(Device.device_uuid).where(Device.device_id.in_(request.devices))
+    ).all()
 
     return JobRequestResponse(
         job_id=job_request.job_id,
         config_id=job_request.config_id,
-        device_serials=json.loads(job_request.device_serials),
+        device_serials=device_serials,
         status=job_request.status,
         duration=job_request.duration,
         created_at=job_request.created_at.isoformat(),
@@ -72,10 +74,18 @@ def get_job_request(job_id: str, session: SessionDepType = Depends(get_session))
     if not job_request:
         raise HTTPException(status_code=404, detail="Job request not found")
 
+    device_serials = list(
+        session.exec(
+            select(Device.device_uuid).where(
+                Device.device_id.in_([jd.device_id for jd in job_request.job_devices])
+            )
+        ).all()
+    )
+
     return JobRequestResponse(
         job_id=job_request.job_id,
         config_id=job_request.config_id,
-        device_serials=json.loads(job_request.device_serials),
+        device_serials=device_serials,
         status=job_request.status,
         duration=job_request.duration,
         created_at=job_request.created_at.isoformat(),

@@ -18,24 +18,17 @@ import type {
 } from 'swr/mutation';
 
 import type {
-  BodyAddConfigConfigsAddPost,
-  BodyAddDeviceDevicesAddPost,
-  BodyAddQueryQueriesAddPost,
-  BodyAddTraceTracesAddPost,
-  BodyCreateJobRequestJobsRunPost,
   BodyCreateTraceV1ApiTracesPost,
-  BodyDeleteQueryQueriesQueryIdDeletePost,
-  BodyEditConfigConfigsConfigIdEditPost,
-  BodyEditDeviceDevicesDeviceIdEditPost,
-  BodyEditQueryQueriesQueryIdEditPost,
   Config,
   ConfigCreate,
+  ConfigResponse,
   ConfigUpdate,
   Device,
   DeviceCreate,
+  DeviceCreateRequest,
+  DeviceResponse,
   DeviceUpdate,
-  DeviceWithRedisInfo,
-  EditQueryAjaxQueriesQueryIdEditAjaxPostBody,
+  DeviceUpdateRequest,
   ExportResultV1ApiGroupResultsQueryIdExportGetParams,
   ExportResultV1ApiResultsTraceIdQueryIdExportGetParams,
   GetConfigurationTracesV1ApiConfigurationsConfigIdTracesGetParams,
@@ -44,16 +37,22 @@ import type {
   GetTracesV1ApiTracesGetParams,
   HTTPValidationError,
   HostWithStatus,
+  JobDeviceStatusUpdate,
+  JobProgressUpdate,
   JobRequestCreate,
   JobRequestResponse,
+  JobStatusUpdate,
+  PendingJob,
   Query,
   QueryCreate,
   QueryUpdate,
-  SearchQueriesQueriesSearchGetParams,
   SrcApiConfigurationsTraceWithDevice,
   SrcApiTracesTraceWithDevice,
+  TraceCreateRequest,
+  TraceCreateResponse,
   TraceDetail,
-  TraceUpdate
+  TraceUpdate,
+  UploadFileV1ApiWorkerStorageUploadPostParams
 } from './schemas';
 
 import axiosInstance from './axios';
@@ -61,1412 +60,6 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
   
-/**
- * @summary Read Devices
- */
-export const readDevicesDevicesGet = (
-    
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<string>(
-    {url: `/devices`, method: 'GET'
-    },
-    options);
-  }
-
-
-
-export const getReadDevicesDevicesGetKey = () => [`/devices`] as const;
-
-export type ReadDevicesDevicesGetQueryResult = NonNullable<Awaited<ReturnType<typeof readDevicesDevicesGet>>>
-export type ReadDevicesDevicesGetQueryError = unknown
-
-/**
- * @summary Read Devices
- */
-export const useReadDevicesDevicesGet = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof readDevicesDevicesGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
-) => {
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getReadDevicesDevicesGetKey() : null);
-  const swrFn = () => readDevicesDevicesGet(requestOptions)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Read Devices
- */
-export const readDevicesDevicesAddGet = (
-    
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<string>(
-    {url: `/devices/add`, method: 'GET'
-    },
-    options);
-  }
-
-
-
-export const getReadDevicesDevicesAddGetKey = () => [`/devices/add`] as const;
-
-export type ReadDevicesDevicesAddGetQueryResult = NonNullable<Awaited<ReturnType<typeof readDevicesDevicesAddGet>>>
-export type ReadDevicesDevicesAddGetQueryError = unknown
-
-/**
- * @summary Read Devices
- */
-export const useReadDevicesDevicesAddGet = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof readDevicesDevicesAddGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
-) => {
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getReadDevicesDevicesAddGetKey() : null);
-  const swrFn = () => readDevicesDevicesAddGet(requestOptions)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Add Device
- */
-export const addDeviceDevicesAddPost = (
-    bodyAddDeviceDevicesAddPost: BodyAddDeviceDevicesAddPost,
- options?: SecondParameter<typeof axiosInstance>) => {const formUrlEncoded = new URLSearchParams();
-formUrlEncoded.append(`device_name`, bodyAddDeviceDevicesAddPost.device_name)
-if(bodyAddDeviceDevicesAddPost.device_uuid !== undefined && bodyAddDeviceDevicesAddPost.device_uuid !== null) {
- formUrlEncoded.append(`device_uuid`, bodyAddDeviceDevicesAddPost.device_uuid)
- }
-
-    return axiosInstance<string>(
-    {url: `/devices/add`, method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded', },
-       data: formUrlEncoded
-    },
-    options);
-  }
-
-
-
-export const getAddDeviceDevicesAddPostMutationFetcher = ( options?: SecondParameter<typeof axiosInstance>) => {
-  return (_: Key, { arg }: { arg: BodyAddDeviceDevicesAddPost }) => {
-    return addDeviceDevicesAddPost(arg, options);
-  }
-}
-export const getAddDeviceDevicesAddPostMutationKey = () => [`/devices/add`] as const;
-
-export type AddDeviceDevicesAddPostMutationResult = NonNullable<Awaited<ReturnType<typeof addDeviceDevicesAddPost>>>
-export type AddDeviceDevicesAddPostMutationError = HTTPValidationError
-
-/**
- * @summary Add Device
- */
-export const useAddDeviceDevicesAddPost = <TError = HTTPValidationError>(
-   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof addDeviceDevicesAddPost>>, TError, Key, BodyAddDeviceDevicesAddPost, Awaited<ReturnType<typeof addDeviceDevicesAddPost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
-) => {
-
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getAddDeviceDevicesAddPostMutationKey();
-  const swrFn = getAddDeviceDevicesAddPostMutationFetcher(requestOptions);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Read Edit Device
- */
-export const readEditDeviceDevicesDeviceIdEditGet = (
-    deviceId: string,
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<string>(
-    {url: `/devices/${deviceId}/edit`, method: 'GET'
-    },
-    options);
-  }
-
-
-
-export const getReadEditDeviceDevicesDeviceIdEditGetKey = (deviceId: string,) => [`/devices/${deviceId}/edit`] as const;
-
-export type ReadEditDeviceDevicesDeviceIdEditGetQueryResult = NonNullable<Awaited<ReturnType<typeof readEditDeviceDevicesDeviceIdEditGet>>>
-export type ReadEditDeviceDevicesDeviceIdEditGetQueryError = HTTPValidationError
-
-/**
- * @summary Read Edit Device
- */
-export const useReadEditDeviceDevicesDeviceIdEditGet = <TError = HTTPValidationError>(
-  deviceId: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof readEditDeviceDevicesDeviceIdEditGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
-) => {
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false && !!(deviceId)
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getReadEditDeviceDevicesDeviceIdEditGetKey(deviceId) : null);
-  const swrFn = () => readEditDeviceDevicesDeviceIdEditGet(deviceId, requestOptions)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Edit Device
- */
-export const editDeviceDevicesDeviceIdEditPost = (
-    deviceId: string,
-    bodyEditDeviceDevicesDeviceIdEditPost: BodyEditDeviceDevicesDeviceIdEditPost,
- options?: SecondParameter<typeof axiosInstance>) => {const formUrlEncoded = new URLSearchParams();
-formUrlEncoded.append(`device_name`, bodyEditDeviceDevicesDeviceIdEditPost.device_name)
-if(bodyEditDeviceDevicesDeviceIdEditPost.device_uuid !== undefined && bodyEditDeviceDevicesDeviceIdEditPost.device_uuid !== null) {
- formUrlEncoded.append(`device_uuid`, bodyEditDeviceDevicesDeviceIdEditPost.device_uuid)
- }
-
-    return axiosInstance<string>(
-    {url: `/devices/${deviceId}/edit`, method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded', },
-       data: formUrlEncoded
-    },
-    options);
-  }
-
-
-
-export const getEditDeviceDevicesDeviceIdEditPostMutationFetcher = (deviceId: string, options?: SecondParameter<typeof axiosInstance>) => {
-  return (_: Key, { arg }: { arg: BodyEditDeviceDevicesDeviceIdEditPost }) => {
-    return editDeviceDevicesDeviceIdEditPost(deviceId, arg, options);
-  }
-}
-export const getEditDeviceDevicesDeviceIdEditPostMutationKey = (deviceId: string,) => [`/devices/${deviceId}/edit`] as const;
-
-export type EditDeviceDevicesDeviceIdEditPostMutationResult = NonNullable<Awaited<ReturnType<typeof editDeviceDevicesDeviceIdEditPost>>>
-export type EditDeviceDevicesDeviceIdEditPostMutationError = HTTPValidationError
-
-/**
- * @summary Edit Device
- */
-export const useEditDeviceDevicesDeviceIdEditPost = <TError = HTTPValidationError>(
-  deviceId: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof editDeviceDevicesDeviceIdEditPost>>, TError, Key, BodyEditDeviceDevicesDeviceIdEditPost, Awaited<ReturnType<typeof editDeviceDevicesDeviceIdEditPost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
-) => {
-
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getEditDeviceDevicesDeviceIdEditPostMutationKey(deviceId);
-  const swrFn = getEditDeviceDevicesDeviceIdEditPostMutationFetcher(deviceId, requestOptions);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Delete Device
- */
-export const deleteDeviceDevicesDeviceIdDeletePost = (
-    deviceId: string,
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<string>(
-    {url: `/devices/${deviceId}/delete`, method: 'POST'
-    },
-    options);
-  }
-
-
-
-export const getDeleteDeviceDevicesDeviceIdDeletePostMutationFetcher = (deviceId: string, options?: SecondParameter<typeof axiosInstance>) => {
-  return (_: Key, __: { arg: Arguments }) => {
-    return deleteDeviceDevicesDeviceIdDeletePost(deviceId, options);
-  }
-}
-export const getDeleteDeviceDevicesDeviceIdDeletePostMutationKey = (deviceId: string,) => [`/devices/${deviceId}/delete`] as const;
-
-export type DeleteDeviceDevicesDeviceIdDeletePostMutationResult = NonNullable<Awaited<ReturnType<typeof deleteDeviceDevicesDeviceIdDeletePost>>>
-export type DeleteDeviceDevicesDeviceIdDeletePostMutationError = HTTPValidationError
-
-/**
- * @summary Delete Device
- */
-export const useDeleteDeviceDevicesDeviceIdDeletePost = <TError = HTTPValidationError>(
-  deviceId: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof deleteDeviceDevicesDeviceIdDeletePost>>, TError, Key, Arguments, Awaited<ReturnType<typeof deleteDeviceDevicesDeviceIdDeletePost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
-) => {
-
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getDeleteDeviceDevicesDeviceIdDeletePostMutationKey(deviceId);
-  const swrFn = getDeleteDeviceDevicesDeviceIdDeletePostMutationFetcher(deviceId, requestOptions);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Device Action
- */
-export const deviceActionDevicesDeviceIdActionActionPost = (
-    deviceId: string,
-    action: string,
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<string>(
-    {url: `/devices/${deviceId}/action/${action}`, method: 'POST'
-    },
-    options);
-  }
-
-
-
-export const getDeviceActionDevicesDeviceIdActionActionPostMutationFetcher = (deviceId: string,
-    action: string, options?: SecondParameter<typeof axiosInstance>) => {
-  return (_: Key, __: { arg: Arguments }) => {
-    return deviceActionDevicesDeviceIdActionActionPost(deviceId, action, options);
-  }
-}
-export const getDeviceActionDevicesDeviceIdActionActionPostMutationKey = (deviceId: string,
-    action: string,) => [`/devices/${deviceId}/action/${action}`] as const;
-
-export type DeviceActionDevicesDeviceIdActionActionPostMutationResult = NonNullable<Awaited<ReturnType<typeof deviceActionDevicesDeviceIdActionActionPost>>>
-export type DeviceActionDevicesDeviceIdActionActionPostMutationError = HTTPValidationError
-
-/**
- * @summary Device Action
- */
-export const useDeviceActionDevicesDeviceIdActionActionPost = <TError = HTTPValidationError>(
-  deviceId: string,
-    action: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof deviceActionDevicesDeviceIdActionActionPost>>, TError, Key, Arguments, Awaited<ReturnType<typeof deviceActionDevicesDeviceIdActionActionPost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
-) => {
-
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getDeviceActionDevicesDeviceIdActionActionPostMutationKey(deviceId,action);
-  const swrFn = getDeviceActionDevicesDeviceIdActionActionPostMutationFetcher(deviceId,action, requestOptions);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Read Traces
- */
-export const readTracesTracesGet = (
-    
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<string>(
-    {url: `/traces`, method: 'GET'
-    },
-    options);
-  }
-
-
-
-export const getReadTracesTracesGetKey = () => [`/traces`] as const;
-
-export type ReadTracesTracesGetQueryResult = NonNullable<Awaited<ReturnType<typeof readTracesTracesGet>>>
-export type ReadTracesTracesGetQueryError = unknown
-
-/**
- * @summary Read Traces
- */
-export const useReadTracesTracesGet = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof readTracesTracesGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
-) => {
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getReadTracesTracesGetKey() : null);
-  const swrFn = () => readTracesTracesGet(requestOptions)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Read Add Trace
- */
-export const readAddTraceTracesAddGet = (
-    
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<string>(
-    {url: `/traces/add`, method: 'GET'
-    },
-    options);
-  }
-
-
-
-export const getReadAddTraceTracesAddGetKey = () => [`/traces/add`] as const;
-
-export type ReadAddTraceTracesAddGetQueryResult = NonNullable<Awaited<ReturnType<typeof readAddTraceTracesAddGet>>>
-export type ReadAddTraceTracesAddGetQueryError = unknown
-
-/**
- * @summary Read Add Trace
- */
-export const useReadAddTraceTracesAddGet = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof readAddTraceTracesAddGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
-) => {
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getReadAddTraceTracesAddGetKey() : null);
-  const swrFn = () => readAddTraceTracesAddGet(requestOptions)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Add Trace
- */
-export const addTraceTracesAddPost = (
-    bodyAddTraceTracesAddPost: BodyAddTraceTracesAddPost,
- options?: SecondParameter<typeof axiosInstance>) => {const formData = new FormData();
-formData.append(`trace_name`, bodyAddTraceTracesAddPost.trace_name)
-formData.append(`device_id`, bodyAddTraceTracesAddPost.device_id)
-formData.append(`trace_timestamp`, bodyAddTraceTracesAddPost.trace_timestamp)
-formData.append(`trace_file`, bodyAddTraceTracesAddPost.trace_file)
-
-    return axiosInstance<string>(
-    {url: `/traces/add`, method: 'POST',
-      headers: {'Content-Type': 'multipart/form-data', },
-       data: formData
-    },
-    options);
-  }
-
-
-
-export const getAddTraceTracesAddPostMutationFetcher = ( options?: SecondParameter<typeof axiosInstance>) => {
-  return (_: Key, { arg }: { arg: BodyAddTraceTracesAddPost }) => {
-    return addTraceTracesAddPost(arg, options);
-  }
-}
-export const getAddTraceTracesAddPostMutationKey = () => [`/traces/add`] as const;
-
-export type AddTraceTracesAddPostMutationResult = NonNullable<Awaited<ReturnType<typeof addTraceTracesAddPost>>>
-export type AddTraceTracesAddPostMutationError = HTTPValidationError
-
-/**
- * @summary Add Trace
- */
-export const useAddTraceTracesAddPost = <TError = HTTPValidationError>(
-   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof addTraceTracesAddPost>>, TError, Key, BodyAddTraceTracesAddPost, Awaited<ReturnType<typeof addTraceTracesAddPost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
-) => {
-
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getAddTraceTracesAddPostMutationKey();
-  const swrFn = getAddTraceTracesAddPostMutationFetcher(requestOptions);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Read Trace
- */
-export const readTraceTracesTraceIdGet = (
-    traceId: string,
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<string>(
-    {url: `/traces/${traceId}`, method: 'GET'
-    },
-    options);
-  }
-
-
-
-export const getReadTraceTracesTraceIdGetKey = (traceId: string,) => [`/traces/${traceId}`] as const;
-
-export type ReadTraceTracesTraceIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof readTraceTracesTraceIdGet>>>
-export type ReadTraceTracesTraceIdGetQueryError = HTTPValidationError
-
-/**
- * @summary Read Trace
- */
-export const useReadTraceTracesTraceIdGet = <TError = HTTPValidationError>(
-  traceId: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof readTraceTracesTraceIdGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
-) => {
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false && !!(traceId)
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getReadTraceTracesTraceIdGetKey(traceId) : null);
-  const swrFn = () => readTraceTracesTraceIdGet(traceId, requestOptions)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Download Trace
- */
-export const downloadTraceTracesTraceIdDownloadGet = (
-    traceId: string,
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<string>(
-    {url: `/traces/${traceId}/download`, method: 'GET'
-    },
-    options);
-  }
-
-
-
-export const getDownloadTraceTracesTraceIdDownloadGetKey = (traceId: string,) => [`/traces/${traceId}/download`] as const;
-
-export type DownloadTraceTracesTraceIdDownloadGetQueryResult = NonNullable<Awaited<ReturnType<typeof downloadTraceTracesTraceIdDownloadGet>>>
-export type DownloadTraceTracesTraceIdDownloadGetQueryError = HTTPValidationError
-
-/**
- * @summary Download Trace
- */
-export const useDownloadTraceTracesTraceIdDownloadGet = <TError = HTTPValidationError>(
-  traceId: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof downloadTraceTracesTraceIdDownloadGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
-) => {
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false && !!(traceId)
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getDownloadTraceTracesTraceIdDownloadGetKey(traceId) : null);
-  const swrFn = () => downloadTraceTracesTraceIdDownloadGet(traceId, requestOptions)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Execute Query
- */
-export const executeQueryTracesTraceIdQueryQueryIdGet = (
-    traceId: string,
-    queryId: string,
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<string>(
-    {url: `/traces/${traceId}/query/${queryId}`, method: 'GET'
-    },
-    options);
-  }
-
-
-
-export const getExecuteQueryTracesTraceIdQueryQueryIdGetKey = (traceId: string,
-    queryId: string,) => [`/traces/${traceId}/query/${queryId}`] as const;
-
-export type ExecuteQueryTracesTraceIdQueryQueryIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof executeQueryTracesTraceIdQueryQueryIdGet>>>
-export type ExecuteQueryTracesTraceIdQueryQueryIdGetQueryError = HTTPValidationError
-
-/**
- * @summary Execute Query
- */
-export const useExecuteQueryTracesTraceIdQueryQueryIdGet = <TError = HTTPValidationError>(
-  traceId: string,
-    queryId: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof executeQueryTracesTraceIdQueryQueryIdGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
-) => {
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false && !!(traceId && queryId)
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getExecuteQueryTracesTraceIdQueryQueryIdGetKey(traceId,queryId) : null);
-  const swrFn = () => executeQueryTracesTraceIdQueryQueryIdGet(traceId,queryId, requestOptions)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Get Query Data
- */
-export const getQueryDataTracesTraceIdQueryQueryIdDataPost = (
-    traceId: string,
-    queryId: string,
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<unknown>(
-    {url: `/traces/${traceId}/query/${queryId}/data`, method: 'POST'
-    },
-    options);
-  }
-
-
-
-export const getGetQueryDataTracesTraceIdQueryQueryIdDataPostMutationFetcher = (traceId: string,
-    queryId: string, options?: SecondParameter<typeof axiosInstance>) => {
-  return (_: Key, __: { arg: Arguments }) => {
-    return getQueryDataTracesTraceIdQueryQueryIdDataPost(traceId, queryId, options);
-  }
-}
-export const getGetQueryDataTracesTraceIdQueryQueryIdDataPostMutationKey = (traceId: string,
-    queryId: string,) => [`/traces/${traceId}/query/${queryId}/data`] as const;
-
-export type GetQueryDataTracesTraceIdQueryQueryIdDataPostMutationResult = NonNullable<Awaited<ReturnType<typeof getQueryDataTracesTraceIdQueryQueryIdDataPost>>>
-export type GetQueryDataTracesTraceIdQueryQueryIdDataPostMutationError = HTTPValidationError
-
-/**
- * @summary Get Query Data
- */
-export const useGetQueryDataTracesTraceIdQueryQueryIdDataPost = <TError = HTTPValidationError>(
-  traceId: string,
-    queryId: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof getQueryDataTracesTraceIdQueryQueryIdDataPost>>, TError, Key, Arguments, Awaited<ReturnType<typeof getQueryDataTracesTraceIdQueryQueryIdDataPost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
-) => {
-
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getGetQueryDataTracesTraceIdQueryQueryIdDataPostMutationKey(traceId,queryId);
-  const swrFn = getGetQueryDataTracesTraceIdQueryQueryIdDataPostMutationFetcher(traceId,queryId, requestOptions);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Delete Trace
- */
-export const deleteTraceTracesTraceIdDeletePost = (
-    traceId: string,
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<string>(
-    {url: `/traces/${traceId}/delete`, method: 'POST'
-    },
-    options);
-  }
-
-
-
-export const getDeleteTraceTracesTraceIdDeletePostMutationFetcher = (traceId: string, options?: SecondParameter<typeof axiosInstance>) => {
-  return (_: Key, __: { arg: Arguments }) => {
-    return deleteTraceTracesTraceIdDeletePost(traceId, options);
-  }
-}
-export const getDeleteTraceTracesTraceIdDeletePostMutationKey = (traceId: string,) => [`/traces/${traceId}/delete`] as const;
-
-export type DeleteTraceTracesTraceIdDeletePostMutationResult = NonNullable<Awaited<ReturnType<typeof deleteTraceTracesTraceIdDeletePost>>>
-export type DeleteTraceTracesTraceIdDeletePostMutationError = HTTPValidationError
-
-/**
- * @summary Delete Trace
- */
-export const useDeleteTraceTracesTraceIdDeletePost = <TError = HTTPValidationError>(
-  traceId: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof deleteTraceTracesTraceIdDeletePost>>, TError, Key, Arguments, Awaited<ReturnType<typeof deleteTraceTracesTraceIdDeletePost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
-) => {
-
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getDeleteTraceTracesTraceIdDeletePostMutationKey(traceId);
-  const swrFn = getDeleteTraceTracesTraceIdDeletePostMutationFetcher(traceId, requestOptions);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Read Queries
- */
-export const readQueriesQueriesGet = (
-    
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<string>(
-    {url: `/queries`, method: 'GET'
-    },
-    options);
-  }
-
-
-
-export const getReadQueriesQueriesGetKey = () => [`/queries`] as const;
-
-export type ReadQueriesQueriesGetQueryResult = NonNullable<Awaited<ReturnType<typeof readQueriesQueriesGet>>>
-export type ReadQueriesQueriesGetQueryError = unknown
-
-/**
- * @summary Read Queries
- */
-export const useReadQueriesQueriesGet = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof readQueriesQueriesGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
-) => {
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getReadQueriesQueriesGetKey() : null);
-  const swrFn = () => readQueriesQueriesGet(requestOptions)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Read Add Query
- */
-export const readAddQueryQueriesAddGet = (
-    
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<string>(
-    {url: `/queries/add`, method: 'GET'
-    },
-    options);
-  }
-
-
-
-export const getReadAddQueryQueriesAddGetKey = () => [`/queries/add`] as const;
-
-export type ReadAddQueryQueriesAddGetQueryResult = NonNullable<Awaited<ReturnType<typeof readAddQueryQueriesAddGet>>>
-export type ReadAddQueryQueriesAddGetQueryError = unknown
-
-/**
- * @summary Read Add Query
- */
-export const useReadAddQueryQueriesAddGet = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof readAddQueryQueriesAddGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
-) => {
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getReadAddQueryQueriesAddGetKey() : null);
-  const swrFn = () => readAddQueryQueriesAddGet(requestOptions)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Add Query
- */
-export const addQueryQueriesAddPost = (
-    bodyAddQueryQueriesAddPost: BodyAddQueryQueriesAddPost,
- options?: SecondParameter<typeof axiosInstance>) => {const formUrlEncoded = new URLSearchParams();
-formUrlEncoded.append(`query_name`, bodyAddQueryQueriesAddPost.query_name)
-formUrlEncoded.append(`query_text`, bodyAddQueryQueriesAddPost.query_text)
-if(bodyAddQueryQueriesAddPost.redirect_to !== undefined) {
- formUrlEncoded.append(`redirect_to`, bodyAddQueryQueriesAddPost.redirect_to)
- }
-
-    return axiosInstance<string>(
-    {url: `/queries/add`, method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded', },
-       data: formUrlEncoded
-    },
-    options);
-  }
-
-
-
-export const getAddQueryQueriesAddPostMutationFetcher = ( options?: SecondParameter<typeof axiosInstance>) => {
-  return (_: Key, { arg }: { arg: BodyAddQueryQueriesAddPost }) => {
-    return addQueryQueriesAddPost(arg, options);
-  }
-}
-export const getAddQueryQueriesAddPostMutationKey = () => [`/queries/add`] as const;
-
-export type AddQueryQueriesAddPostMutationResult = NonNullable<Awaited<ReturnType<typeof addQueryQueriesAddPost>>>
-export type AddQueryQueriesAddPostMutationError = HTTPValidationError
-
-/**
- * @summary Add Query
- */
-export const useAddQueryQueriesAddPost = <TError = HTTPValidationError>(
-   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof addQueryQueriesAddPost>>, TError, Key, BodyAddQueryQueriesAddPost, Awaited<ReturnType<typeof addQueryQueriesAddPost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
-) => {
-
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getAddQueryQueriesAddPostMutationKey();
-  const swrFn = getAddQueryQueriesAddPostMutationFetcher(requestOptions);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Read Edit Query
- */
-export const readEditQueryQueriesQueryIdEditGet = (
-    queryId: string,
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<string>(
-    {url: `/queries/${queryId}/edit`, method: 'GET'
-    },
-    options);
-  }
-
-
-
-export const getReadEditQueryQueriesQueryIdEditGetKey = (queryId: string,) => [`/queries/${queryId}/edit`] as const;
-
-export type ReadEditQueryQueriesQueryIdEditGetQueryResult = NonNullable<Awaited<ReturnType<typeof readEditQueryQueriesQueryIdEditGet>>>
-export type ReadEditQueryQueriesQueryIdEditGetQueryError = HTTPValidationError
-
-/**
- * @summary Read Edit Query
- */
-export const useReadEditQueryQueriesQueryIdEditGet = <TError = HTTPValidationError>(
-  queryId: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof readEditQueryQueriesQueryIdEditGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
-) => {
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false && !!(queryId)
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getReadEditQueryQueriesQueryIdEditGetKey(queryId) : null);
-  const swrFn = () => readEditQueryQueriesQueryIdEditGet(queryId, requestOptions)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Edit Query
- */
-export const editQueryQueriesQueryIdEditPost = (
-    queryId: string,
-    bodyEditQueryQueriesQueryIdEditPost: BodyEditQueryQueriesQueryIdEditPost,
- options?: SecondParameter<typeof axiosInstance>) => {const formUrlEncoded = new URLSearchParams();
-formUrlEncoded.append(`query_name`, bodyEditQueryQueriesQueryIdEditPost.query_name)
-formUrlEncoded.append(`query_text`, bodyEditQueryQueriesQueryIdEditPost.query_text)
-
-    return axiosInstance<string>(
-    {url: `/queries/${queryId}/edit`, method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded', },
-       data: formUrlEncoded
-    },
-    options);
-  }
-
-
-
-export const getEditQueryQueriesQueryIdEditPostMutationFetcher = (queryId: string, options?: SecondParameter<typeof axiosInstance>) => {
-  return (_: Key, { arg }: { arg: BodyEditQueryQueriesQueryIdEditPost }) => {
-    return editQueryQueriesQueryIdEditPost(queryId, arg, options);
-  }
-}
-export const getEditQueryQueriesQueryIdEditPostMutationKey = (queryId: string,) => [`/queries/${queryId}/edit`] as const;
-
-export type EditQueryQueriesQueryIdEditPostMutationResult = NonNullable<Awaited<ReturnType<typeof editQueryQueriesQueryIdEditPost>>>
-export type EditQueryQueriesQueryIdEditPostMutationError = HTTPValidationError
-
-/**
- * @summary Edit Query
- */
-export const useEditQueryQueriesQueryIdEditPost = <TError = HTTPValidationError>(
-  queryId: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof editQueryQueriesQueryIdEditPost>>, TError, Key, BodyEditQueryQueriesQueryIdEditPost, Awaited<ReturnType<typeof editQueryQueriesQueryIdEditPost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
-) => {
-
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getEditQueryQueriesQueryIdEditPostMutationKey(queryId);
-  const swrFn = getEditQueryQueriesQueryIdEditPostMutationFetcher(queryId, requestOptions);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Delete Query
- */
-export const deleteQueryQueriesQueryIdDeletePost = (
-    queryId: string,
-    bodyDeleteQueryQueriesQueryIdDeletePost: BodyDeleteQueryQueriesQueryIdDeletePost,
- options?: SecondParameter<typeof axiosInstance>) => {const formUrlEncoded = new URLSearchParams();
-if(bodyDeleteQueryQueriesQueryIdDeletePost.redirect_to !== undefined) {
- formUrlEncoded.append(`redirect_to`, bodyDeleteQueryQueriesQueryIdDeletePost.redirect_to)
- }
-
-    return axiosInstance<string>(
-    {url: `/queries/${queryId}/delete`, method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded', },
-       data: formUrlEncoded
-    },
-    options);
-  }
-
-
-
-export const getDeleteQueryQueriesQueryIdDeletePostMutationFetcher = (queryId: string, options?: SecondParameter<typeof axiosInstance>) => {
-  return (_: Key, { arg }: { arg: BodyDeleteQueryQueriesQueryIdDeletePost }) => {
-    return deleteQueryQueriesQueryIdDeletePost(queryId, arg, options);
-  }
-}
-export const getDeleteQueryQueriesQueryIdDeletePostMutationKey = (queryId: string,) => [`/queries/${queryId}/delete`] as const;
-
-export type DeleteQueryQueriesQueryIdDeletePostMutationResult = NonNullable<Awaited<ReturnType<typeof deleteQueryQueriesQueryIdDeletePost>>>
-export type DeleteQueryQueriesQueryIdDeletePostMutationError = HTTPValidationError
-
-/**
- * @summary Delete Query
- */
-export const useDeleteQueryQueriesQueryIdDeletePost = <TError = HTTPValidationError>(
-  queryId: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof deleteQueryQueriesQueryIdDeletePost>>, TError, Key, BodyDeleteQueryQueriesQueryIdDeletePost, Awaited<ReturnType<typeof deleteQueryQueriesQueryIdDeletePost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
-) => {
-
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getDeleteQueryQueriesQueryIdDeletePostMutationKey(queryId);
-  const swrFn = getDeleteQueryQueriesQueryIdDeletePostMutationFetcher(queryId, requestOptions);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Search Queries
- */
-export const searchQueriesQueriesSearchGet = (
-    params?: SearchQueriesQueriesSearchGetParams,
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<unknown>(
-    {url: `/queries/search`, method: 'GET',
-        params
-    },
-    options);
-  }
-
-
-
-export const getSearchQueriesQueriesSearchGetKey = (params?: SearchQueriesQueriesSearchGetParams,) => [`/queries/search`, ...(params ? [params]: [])] as const;
-
-export type SearchQueriesQueriesSearchGetQueryResult = NonNullable<Awaited<ReturnType<typeof searchQueriesQueriesSearchGet>>>
-export type SearchQueriesQueriesSearchGetQueryError = HTTPValidationError
-
-/**
- * @summary Search Queries
- */
-export const useSearchQueriesQueriesSearchGet = <TError = HTTPValidationError>(
-  params?: SearchQueriesQueriesSearchGetParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof searchQueriesQueriesSearchGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
-) => {
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getSearchQueriesQueriesSearchGetKey(params) : null);
-  const swrFn = () => searchQueriesQueriesSearchGet(params, requestOptions)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Edit Query Ajax
- */
-export const editQueryAjaxQueriesQueryIdEditAjaxPost = (
-    queryId: string,
-    editQueryAjaxQueriesQueryIdEditAjaxPostBody: EditQueryAjaxQueriesQueryIdEditAjaxPostBody,
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<unknown>(
-    {url: `/queries/${queryId}/edit_ajax`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: editQueryAjaxQueriesQueryIdEditAjaxPostBody
-    },
-    options);
-  }
-
-
-
-export const getEditQueryAjaxQueriesQueryIdEditAjaxPostMutationFetcher = (queryId: string, options?: SecondParameter<typeof axiosInstance>) => {
-  return (_: Key, { arg }: { arg: EditQueryAjaxQueriesQueryIdEditAjaxPostBody }) => {
-    return editQueryAjaxQueriesQueryIdEditAjaxPost(queryId, arg, options);
-  }
-}
-export const getEditQueryAjaxQueriesQueryIdEditAjaxPostMutationKey = (queryId: string,) => [`/queries/${queryId}/edit_ajax`] as const;
-
-export type EditQueryAjaxQueriesQueryIdEditAjaxPostMutationResult = NonNullable<Awaited<ReturnType<typeof editQueryAjaxQueriesQueryIdEditAjaxPost>>>
-export type EditQueryAjaxQueriesQueryIdEditAjaxPostMutationError = HTTPValidationError
-
-/**
- * @summary Edit Query Ajax
- */
-export const useEditQueryAjaxQueriesQueryIdEditAjaxPost = <TError = HTTPValidationError>(
-  queryId: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof editQueryAjaxQueriesQueryIdEditAjaxPost>>, TError, Key, EditQueryAjaxQueriesQueryIdEditAjaxPostBody, Awaited<ReturnType<typeof editQueryAjaxQueriesQueryIdEditAjaxPost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
-) => {
-
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getEditQueryAjaxQueriesQueryIdEditAjaxPostMutationKey(queryId);
-  const swrFn = getEditQueryAjaxQueriesQueryIdEditAjaxPostMutationFetcher(queryId, requestOptions);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Read Configs
- */
-export const readConfigsConfigsGet = (
-    
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<string>(
-    {url: `/configs`, method: 'GET'
-    },
-    options);
-  }
-
-
-
-export const getReadConfigsConfigsGetKey = () => [`/configs`] as const;
-
-export type ReadConfigsConfigsGetQueryResult = NonNullable<Awaited<ReturnType<typeof readConfigsConfigsGet>>>
-export type ReadConfigsConfigsGetQueryError = unknown
-
-/**
- * @summary Read Configs
- */
-export const useReadConfigsConfigsGet = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof readConfigsConfigsGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
-) => {
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getReadConfigsConfigsGetKey() : null);
-  const swrFn = () => readConfigsConfigsGet(requestOptions)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Read Add Config
- */
-export const readAddConfigConfigsAddGet = (
-    
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<string>(
-    {url: `/configs/add`, method: 'GET'
-    },
-    options);
-  }
-
-
-
-export const getReadAddConfigConfigsAddGetKey = () => [`/configs/add`] as const;
-
-export type ReadAddConfigConfigsAddGetQueryResult = NonNullable<Awaited<ReturnType<typeof readAddConfigConfigsAddGet>>>
-export type ReadAddConfigConfigsAddGetQueryError = unknown
-
-/**
- * @summary Read Add Config
- */
-export const useReadAddConfigConfigsAddGet = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof readAddConfigConfigsAddGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
-) => {
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getReadAddConfigConfigsAddGetKey() : null);
-  const swrFn = () => readAddConfigConfigsAddGet(requestOptions)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Add Config
- */
-export const addConfigConfigsAddPost = (
-    bodyAddConfigConfigsAddPost: BodyAddConfigConfigsAddPost,
- options?: SecondParameter<typeof axiosInstance>) => {const formUrlEncoded = new URLSearchParams();
-formUrlEncoded.append(`config_name`, bodyAddConfigConfigsAddPost.config_name)
-formUrlEncoded.append(`config_text`, bodyAddConfigConfigsAddPost.config_text)
-
-    return axiosInstance<string>(
-    {url: `/configs/add`, method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded', },
-       data: formUrlEncoded
-    },
-    options);
-  }
-
-
-
-export const getAddConfigConfigsAddPostMutationFetcher = ( options?: SecondParameter<typeof axiosInstance>) => {
-  return (_: Key, { arg }: { arg: BodyAddConfigConfigsAddPost }) => {
-    return addConfigConfigsAddPost(arg, options);
-  }
-}
-export const getAddConfigConfigsAddPostMutationKey = () => [`/configs/add`] as const;
-
-export type AddConfigConfigsAddPostMutationResult = NonNullable<Awaited<ReturnType<typeof addConfigConfigsAddPost>>>
-export type AddConfigConfigsAddPostMutationError = HTTPValidationError
-
-/**
- * @summary Add Config
- */
-export const useAddConfigConfigsAddPost = <TError = HTTPValidationError>(
-   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof addConfigConfigsAddPost>>, TError, Key, BodyAddConfigConfigsAddPost, Awaited<ReturnType<typeof addConfigConfigsAddPost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
-) => {
-
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getAddConfigConfigsAddPostMutationKey();
-  const swrFn = getAddConfigConfigsAddPostMutationFetcher(requestOptions);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Read Config
- */
-export const readConfigConfigsConfigIdGet = (
-    configId: string,
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<string>(
-    {url: `/configs/${configId}`, method: 'GET'
-    },
-    options);
-  }
-
-
-
-export const getReadConfigConfigsConfigIdGetKey = (configId: string,) => [`/configs/${configId}`] as const;
-
-export type ReadConfigConfigsConfigIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof readConfigConfigsConfigIdGet>>>
-export type ReadConfigConfigsConfigIdGetQueryError = HTTPValidationError
-
-/**
- * @summary Read Config
- */
-export const useReadConfigConfigsConfigIdGet = <TError = HTTPValidationError>(
-  configId: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof readConfigConfigsConfigIdGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
-) => {
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false && !!(configId)
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getReadConfigConfigsConfigIdGetKey(configId) : null);
-  const swrFn = () => readConfigConfigsConfigIdGet(configId, requestOptions)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Edit Config
- */
-export const editConfigConfigsConfigIdEditPost = (
-    configId: string,
-    bodyEditConfigConfigsConfigIdEditPost: BodyEditConfigConfigsConfigIdEditPost,
- options?: SecondParameter<typeof axiosInstance>) => {const formUrlEncoded = new URLSearchParams();
-formUrlEncoded.append(`config_name`, bodyEditConfigConfigsConfigIdEditPost.config_name)
-formUrlEncoded.append(`config_text`, bodyEditConfigConfigsConfigIdEditPost.config_text)
-
-    return axiosInstance<string>(
-    {url: `/configs/${configId}/edit`, method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded', },
-       data: formUrlEncoded
-    },
-    options);
-  }
-
-
-
-export const getEditConfigConfigsConfigIdEditPostMutationFetcher = (configId: string, options?: SecondParameter<typeof axiosInstance>) => {
-  return (_: Key, { arg }: { arg: BodyEditConfigConfigsConfigIdEditPost }) => {
-    return editConfigConfigsConfigIdEditPost(configId, arg, options);
-  }
-}
-export const getEditConfigConfigsConfigIdEditPostMutationKey = (configId: string,) => [`/configs/${configId}/edit`] as const;
-
-export type EditConfigConfigsConfigIdEditPostMutationResult = NonNullable<Awaited<ReturnType<typeof editConfigConfigsConfigIdEditPost>>>
-export type EditConfigConfigsConfigIdEditPostMutationError = HTTPValidationError
-
-/**
- * @summary Edit Config
- */
-export const useEditConfigConfigsConfigIdEditPost = <TError = HTTPValidationError>(
-  configId: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof editConfigConfigsConfigIdEditPost>>, TError, Key, BodyEditConfigConfigsConfigIdEditPost, Awaited<ReturnType<typeof editConfigConfigsConfigIdEditPost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
-) => {
-
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getEditConfigConfigsConfigIdEditPostMutationKey(configId);
-  const swrFn = getEditConfigConfigsConfigIdEditPostMutationFetcher(configId, requestOptions);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * @summary Delete Config
- */
-export const deleteConfigConfigsConfigIdDeletePost = (
-    configId: string,
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<string>(
-    {url: `/configs/${configId}/delete`, method: 'POST'
-    },
-    options);
-  }
-
-
-
-export const getDeleteConfigConfigsConfigIdDeletePostMutationFetcher = (configId: string, options?: SecondParameter<typeof axiosInstance>) => {
-  return (_: Key, __: { arg: Arguments }) => {
-    return deleteConfigConfigsConfigIdDeletePost(configId, options);
-  }
-}
-export const getDeleteConfigConfigsConfigIdDeletePostMutationKey = (configId: string,) => [`/configs/${configId}/delete`] as const;
-
-export type DeleteConfigConfigsConfigIdDeletePostMutationResult = NonNullable<Awaited<ReturnType<typeof deleteConfigConfigsConfigIdDeletePost>>>
-export type DeleteConfigConfigsConfigIdDeletePostMutationError = HTTPValidationError
-
-/**
- * @summary Delete Config
- */
-export const useDeleteConfigConfigsConfigIdDeletePost = <TError = HTTPValidationError>(
-  configId: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof deleteConfigConfigsConfigIdDeletePost>>, TError, Key, Arguments, Awaited<ReturnType<typeof deleteConfigConfigsConfigIdDeletePost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
-) => {
-
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getDeleteConfigConfigsConfigIdDeletePostMutationKey(configId);
-  const swrFn = getDeleteConfigConfigsConfigIdDeletePostMutationFetcher(configId, requestOptions);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * View job result page with SSE updates
- * @summary View Job Result
- */
-export const viewJobResultJobsJobIdGet = (
-    jobId: string,
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<string>(
-    {url: `/jobs/${jobId}`, method: 'GET'
-    },
-    options);
-  }
-
-
-
-export const getViewJobResultJobsJobIdGetKey = (jobId: string,) => [`/jobs/${jobId}`] as const;
-
-export type ViewJobResultJobsJobIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof viewJobResultJobsJobIdGet>>>
-export type ViewJobResultJobsJobIdGetQueryError = HTTPValidationError
-
-/**
- * @summary View Job Result
- */
-export const useViewJobResultJobsJobIdGet = <TError = HTTPValidationError>(
-  jobId: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof viewJobResultJobsJobIdGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
-) => {
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false && !!(jobId)
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getViewJobResultJobsJobIdGetKey(jobId) : null);
-  const swrFn = () => viewJobResultJobsJobIdGet(jobId, requestOptions)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * Server-Sent Events endpoint for job updates
- * @summary Job Updates Stream
- */
-export const jobUpdatesStreamJobsJobIdStreamGet = (
-    jobId: string,
- options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<unknown>(
-    {url: `/jobs/${jobId}/stream`, method: 'GET'
-    },
-    options);
-  }
-
-
-
-export const getJobUpdatesStreamJobsJobIdStreamGetKey = (jobId: string,) => [`/jobs/${jobId}/stream`] as const;
-
-export type JobUpdatesStreamJobsJobIdStreamGetQueryResult = NonNullable<Awaited<ReturnType<typeof jobUpdatesStreamJobsJobIdStreamGet>>>
-export type JobUpdatesStreamJobsJobIdStreamGetQueryError = HTTPValidationError
-
-/**
- * @summary Job Updates Stream
- */
-export const useJobUpdatesStreamJobsJobIdStreamGet = <TError = HTTPValidationError>(
-  jobId: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof jobUpdatesStreamJobsJobIdStreamGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
-) => {
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false && !!(jobId)
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getJobUpdatesStreamJobsJobIdStreamGetKey(jobId) : null);
-  const swrFn = () => jobUpdatesStreamJobsJobIdStreamGet(jobId, requestOptions)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
-/**
- * Create a new job request
- * @summary Create Job Request
- */
-export const createJobRequestJobsRunPost = (
-    bodyCreateJobRequestJobsRunPost: BodyCreateJobRequestJobsRunPost,
- options?: SecondParameter<typeof axiosInstance>) => {const formUrlEncoded = new URLSearchParams();
-formUrlEncoded.append(`config_id`, bodyCreateJobRequestJobsRunPost.config_id)
-formUrlEncoded.append(`device_serials`, bodyCreateJobRequestJobsRunPost.device_serials)
-if(bodyCreateJobRequestJobsRunPost.duration !== undefined) {
- formUrlEncoded.append(`duration`, bodyCreateJobRequestJobsRunPost.duration.toString())
- }
-if(bodyCreateJobRequestJobsRunPost.redirect_url !== undefined) {
- formUrlEncoded.append(`redirect_url`, bodyCreateJobRequestJobsRunPost.redirect_url)
- }
-
-    return axiosInstance<unknown>(
-    {url: `/jobs/run`, method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded', },
-       data: formUrlEncoded
-    },
-    options);
-  }
-
-
-
-export const getCreateJobRequestJobsRunPostMutationFetcher = ( options?: SecondParameter<typeof axiosInstance>) => {
-  return (_: Key, { arg }: { arg: BodyCreateJobRequestJobsRunPost }) => {
-    return createJobRequestJobsRunPost(arg, options);
-  }
-}
-export const getCreateJobRequestJobsRunPostMutationKey = () => [`/jobs/run`] as const;
-
-export type CreateJobRequestJobsRunPostMutationResult = NonNullable<Awaited<ReturnType<typeof createJobRequestJobsRunPost>>>
-export type CreateJobRequestJobsRunPostMutationError = HTTPValidationError
-
-/**
- * @summary Create Job Request
- */
-export const useCreateJobRequestJobsRunPost = <TError = HTTPValidationError>(
-   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof createJobRequestJobsRunPost>>, TError, Key, BodyCreateJobRequestJobsRunPost, Awaited<ReturnType<typeof createJobRequestJobsRunPost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
-) => {
-
-  const {swr: swrOptions, request: requestOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getCreateJobRequestJobsRunPostMutationKey();
-  const swrFn = getCreateJobRequestJobsRunPostMutationFetcher(requestOptions);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-
 /**
  * Get all hosts
  * @summary Get Hosts
@@ -1559,7 +152,7 @@ export const useDeleteHostV1ApiHostsHostIdDeletePost = <TError = HTTPValidationE
 export const getDevicesV1ApiDevicesGet = (
     
  options?: SecondParameter<typeof axiosInstance>) => {
-    return axiosInstance<DeviceWithRedisInfo[]>(
+    return axiosInstance<Device[]>(
     {url: `/v1/api/devices`, method: 'GET'
     },
     options);
@@ -2834,6 +1427,500 @@ export const useGetJsonResultV1ApiGroupResultsQueryIdJsonGet = <TError = HTTPVal
   const swrFn = () => getJsonResultV1ApiGroupResultsQueryIdJsonGet(queryId,params, requestOptions)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+
+/**
+ * Fetch pending job-device pairs for worker processing.
+ * @summary Get Pending Jobs
+ */
+export const getPendingJobsV1ApiWorkerJobsPendingGet = (
+    
+ options?: SecondParameter<typeof axiosInstance>) => {
+    return axiosInstance<PendingJob[]>(
+    {url: `/v1/api/worker/jobs/pending`, method: 'GET'
+    },
+    options);
+  }
+
+
+
+export const getGetPendingJobsV1ApiWorkerJobsPendingGetKey = () => [`/v1/api/worker/jobs/pending`] as const;
+
+export type GetPendingJobsV1ApiWorkerJobsPendingGetQueryResult = NonNullable<Awaited<ReturnType<typeof getPendingJobsV1ApiWorkerJobsPendingGet>>>
+export type GetPendingJobsV1ApiWorkerJobsPendingGetQueryError = HTTPValidationError
+
+/**
+ * @summary Get Pending Jobs
+ */
+export const useGetPendingJobsV1ApiWorkerJobsPendingGet = <TError = HTTPValidationError>(
+   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof getPendingJobsV1ApiWorkerJobsPendingGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
+) => {
+  const {swr: swrOptions, request: requestOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getGetPendingJobsV1ApiWorkerJobsPendingGetKey() : null);
+  const swrFn = () => getPendingJobsV1ApiWorkerJobsPendingGet(requestOptions)
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+
+/**
+ * Fetch configuration by ID.
+ * @summary Get Config
+ */
+export const getConfigV1ApiWorkerConfigsConfigIdGet = (
+    configId: string,
+ options?: SecondParameter<typeof axiosInstance>) => {
+    return axiosInstance<ConfigResponse>(
+    {url: `/v1/api/worker/configs/${configId}`, method: 'GET'
+    },
+    options);
+  }
+
+
+
+export const getGetConfigV1ApiWorkerConfigsConfigIdGetKey = (configId: string,) => [`/v1/api/worker/configs/${configId}`] as const;
+
+export type GetConfigV1ApiWorkerConfigsConfigIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getConfigV1ApiWorkerConfigsConfigIdGet>>>
+export type GetConfigV1ApiWorkerConfigsConfigIdGetQueryError = HTTPValidationError
+
+/**
+ * @summary Get Config
+ */
+export const useGetConfigV1ApiWorkerConfigsConfigIdGet = <TError = HTTPValidationError>(
+  configId: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof getConfigV1ApiWorkerConfigsConfigIdGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
+) => {
+  const {swr: swrOptions, request: requestOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false && !!(configId)
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getGetConfigV1ApiWorkerConfigsConfigIdGetKey(configId) : null);
+  const swrFn = () => getConfigV1ApiWorkerConfigsConfigIdGet(configId, requestOptions)
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+
+/**
+ * Fetch device by serial (device_uuid or device_id).
+ * @summary Get Device By Serial
+ */
+export const getDeviceBySerialV1ApiWorkerDevicesBySerialDeviceSerialGet = (
+    deviceSerial: string,
+ options?: SecondParameter<typeof axiosInstance>) => {
+    return axiosInstance<DeviceResponse>(
+    {url: `/v1/api/worker/devices/by-serial/${deviceSerial}`, method: 'GET'
+    },
+    options);
+  }
+
+
+
+export const getGetDeviceBySerialV1ApiWorkerDevicesBySerialDeviceSerialGetKey = (deviceSerial: string,) => [`/v1/api/worker/devices/by-serial/${deviceSerial}`] as const;
+
+export type GetDeviceBySerialV1ApiWorkerDevicesBySerialDeviceSerialGetQueryResult = NonNullable<Awaited<ReturnType<typeof getDeviceBySerialV1ApiWorkerDevicesBySerialDeviceSerialGet>>>
+export type GetDeviceBySerialV1ApiWorkerDevicesBySerialDeviceSerialGetQueryError = HTTPValidationError
+
+/**
+ * @summary Get Device By Serial
+ */
+export const useGetDeviceBySerialV1ApiWorkerDevicesBySerialDeviceSerialGet = <TError = HTTPValidationError>(
+  deviceSerial: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof getDeviceBySerialV1ApiWorkerDevicesBySerialDeviceSerialGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
+) => {
+  const {swr: swrOptions, request: requestOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false && !!(deviceSerial)
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getGetDeviceBySerialV1ApiWorkerDevicesBySerialDeviceSerialGetKey(deviceSerial) : null);
+  const swrFn = () => getDeviceBySerialV1ApiWorkerDevicesBySerialDeviceSerialGet(deviceSerial, requestOptions)
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+
+/**
+ * Fetch all devices.
+ * @summary Get Devices
+ */
+export const getDevicesV1ApiWorkerDevicesGet = (
+    
+ options?: SecondParameter<typeof axiosInstance>) => {
+    return axiosInstance<unknown>(
+    {url: `/v1/api/worker/devices`, method: 'GET'
+    },
+    options);
+  }
+
+
+
+export const getGetDevicesV1ApiWorkerDevicesGetKey = () => [`/v1/api/worker/devices`] as const;
+
+export type GetDevicesV1ApiWorkerDevicesGetQueryResult = NonNullable<Awaited<ReturnType<typeof getDevicesV1ApiWorkerDevicesGet>>>
+export type GetDevicesV1ApiWorkerDevicesGetQueryError = HTTPValidationError
+
+/**
+ * @summary Get Devices
+ */
+export const useGetDevicesV1ApiWorkerDevicesGet = <TError = HTTPValidationError>(
+   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof getDevicesV1ApiWorkerDevicesGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
+) => {
+  const {swr: swrOptions, request: requestOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getGetDevicesV1ApiWorkerDevicesGetKey() : null);
+  const swrFn = () => getDevicesV1ApiWorkerDevicesGet(requestOptions)
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+
+/**
+ * Create a new device.
+ * @summary Create Device
+ */
+export const createDeviceV1ApiWorkerDevicesPost = (
+    deviceCreateRequest: DeviceCreateRequest,
+ options?: SecondParameter<typeof axiosInstance>) => {
+    return axiosInstance<unknown>(
+    {url: `/v1/api/worker/devices`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: deviceCreateRequest
+    },
+    options);
+  }
+
+
+
+export const getCreateDeviceV1ApiWorkerDevicesPostMutationFetcher = ( options?: SecondParameter<typeof axiosInstance>) => {
+  return (_: Key, { arg }: { arg: DeviceCreateRequest }) => {
+    return createDeviceV1ApiWorkerDevicesPost(arg, options);
+  }
+}
+export const getCreateDeviceV1ApiWorkerDevicesPostMutationKey = () => [`/v1/api/worker/devices`] as const;
+
+export type CreateDeviceV1ApiWorkerDevicesPostMutationResult = NonNullable<Awaited<ReturnType<typeof createDeviceV1ApiWorkerDevicesPost>>>
+export type CreateDeviceV1ApiWorkerDevicesPostMutationError = HTTPValidationError
+
+/**
+ * @summary Create Device
+ */
+export const useCreateDeviceV1ApiWorkerDevicesPost = <TError = HTTPValidationError>(
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof createDeviceV1ApiWorkerDevicesPost>>, TError, Key, DeviceCreateRequest, Awaited<ReturnType<typeof createDeviceV1ApiWorkerDevicesPost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
+) => {
+
+  const {swr: swrOptions, request: requestOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getCreateDeviceV1ApiWorkerDevicesPostMutationKey();
+  const swrFn = getCreateDeviceV1ApiWorkerDevicesPostMutationFetcher(requestOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+
+/**
+ * Update an existing device.
+ * @summary Update Device
+ */
+export const updateDeviceV1ApiWorkerDevicesDeviceIdPut = (
+    deviceId: string,
+    deviceUpdateRequest: DeviceUpdateRequest,
+ options?: SecondParameter<typeof axiosInstance>) => {
+    return axiosInstance<unknown>(
+    {url: `/v1/api/worker/devices/${deviceId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: deviceUpdateRequest
+    },
+    options);
+  }
+
+
+
+export const getUpdateDeviceV1ApiWorkerDevicesDeviceIdPutMutationFetcher = (deviceId: string, options?: SecondParameter<typeof axiosInstance>) => {
+  return (_: Key, { arg }: { arg: DeviceUpdateRequest }) => {
+    return updateDeviceV1ApiWorkerDevicesDeviceIdPut(deviceId, arg, options);
+  }
+}
+export const getUpdateDeviceV1ApiWorkerDevicesDeviceIdPutMutationKey = (deviceId: string,) => [`/v1/api/worker/devices/${deviceId}`] as const;
+
+export type UpdateDeviceV1ApiWorkerDevicesDeviceIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateDeviceV1ApiWorkerDevicesDeviceIdPut>>>
+export type UpdateDeviceV1ApiWorkerDevicesDeviceIdPutMutationError = HTTPValidationError
+
+/**
+ * @summary Update Device
+ */
+export const useUpdateDeviceV1ApiWorkerDevicesDeviceIdPut = <TError = HTTPValidationError>(
+  deviceId: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof updateDeviceV1ApiWorkerDevicesDeviceIdPut>>, TError, Key, DeviceUpdateRequest, Awaited<ReturnType<typeof updateDeviceV1ApiWorkerDevicesDeviceIdPut>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
+) => {
+
+  const {swr: swrOptions, request: requestOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getUpdateDeviceV1ApiWorkerDevicesDeviceIdPutMutationKey(deviceId);
+  const swrFn = getUpdateDeviceV1ApiWorkerDevicesDeviceIdPutMutationFetcher(deviceId, requestOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+
+/**
+ * Create a trace record.
+ * @summary Create Trace
+ */
+export const createTraceV1ApiWorkerTracesPost = (
+    traceCreateRequest: TraceCreateRequest,
+ options?: SecondParameter<typeof axiosInstance>) => {
+    return axiosInstance<TraceCreateResponse>(
+    {url: `/v1/api/worker/traces`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: traceCreateRequest
+    },
+    options);
+  }
+
+
+
+export const getCreateTraceV1ApiWorkerTracesPostMutationFetcher = ( options?: SecondParameter<typeof axiosInstance>) => {
+  return (_: Key, { arg }: { arg: TraceCreateRequest }) => {
+    return createTraceV1ApiWorkerTracesPost(arg, options);
+  }
+}
+export const getCreateTraceV1ApiWorkerTracesPostMutationKey = () => [`/v1/api/worker/traces`] as const;
+
+export type CreateTraceV1ApiWorkerTracesPostMutationResult = NonNullable<Awaited<ReturnType<typeof createTraceV1ApiWorkerTracesPost>>>
+export type CreateTraceV1ApiWorkerTracesPostMutationError = HTTPValidationError
+
+/**
+ * @summary Create Trace
+ */
+export const useCreateTraceV1ApiWorkerTracesPost = <TError = HTTPValidationError>(
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof createTraceV1ApiWorkerTracesPost>>, TError, Key, TraceCreateRequest, Awaited<ReturnType<typeof createTraceV1ApiWorkerTracesPost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
+) => {
+
+  const {swr: swrOptions, request: requestOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getCreateTraceV1ApiWorkerTracesPostMutationKey();
+  const swrFn = getCreateTraceV1ApiWorkerTracesPostMutationFetcher(requestOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+
+/**
+ * Update job status.
+ * @summary Update Job Status
+ */
+export const updateJobStatusV1ApiWorkerJobsJobIdStatusPost = (
+    jobId: string,
+    jobStatusUpdate: JobStatusUpdate,
+ options?: SecondParameter<typeof axiosInstance>) => {
+    return axiosInstance<unknown>(
+    {url: `/v1/api/worker/jobs/${jobId}/status`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: jobStatusUpdate
+    },
+    options);
+  }
+
+
+
+export const getUpdateJobStatusV1ApiWorkerJobsJobIdStatusPostMutationFetcher = (jobId: string, options?: SecondParameter<typeof axiosInstance>) => {
+  return (_: Key, { arg }: { arg: JobStatusUpdate }) => {
+    return updateJobStatusV1ApiWorkerJobsJobIdStatusPost(jobId, arg, options);
+  }
+}
+export const getUpdateJobStatusV1ApiWorkerJobsJobIdStatusPostMutationKey = (jobId: string,) => [`/v1/api/worker/jobs/${jobId}/status`] as const;
+
+export type UpdateJobStatusV1ApiWorkerJobsJobIdStatusPostMutationResult = NonNullable<Awaited<ReturnType<typeof updateJobStatusV1ApiWorkerJobsJobIdStatusPost>>>
+export type UpdateJobStatusV1ApiWorkerJobsJobIdStatusPostMutationError = HTTPValidationError
+
+/**
+ * @summary Update Job Status
+ */
+export const useUpdateJobStatusV1ApiWorkerJobsJobIdStatusPost = <TError = HTTPValidationError>(
+  jobId: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof updateJobStatusV1ApiWorkerJobsJobIdStatusPost>>, TError, Key, JobStatusUpdate, Awaited<ReturnType<typeof updateJobStatusV1ApiWorkerJobsJobIdStatusPost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
+) => {
+
+  const {swr: swrOptions, request: requestOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getUpdateJobStatusV1ApiWorkerJobsJobIdStatusPostMutationKey(jobId);
+  const swrFn = getUpdateJobStatusV1ApiWorkerJobsJobIdStatusPostMutationFetcher(jobId, requestOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+
+/**
+ * Record a job progress update for a specific device.
+ * @summary Add Job Update
+ */
+export const addJobUpdateV1ApiWorkerJobsJobIdUpdatesPost = (
+    jobId: string,
+    jobProgressUpdate: JobProgressUpdate,
+ options?: SecondParameter<typeof axiosInstance>) => {
+    return axiosInstance<unknown>(
+    {url: `/v1/api/worker/jobs/${jobId}/updates`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: jobProgressUpdate
+    },
+    options);
+  }
+
+
+
+export const getAddJobUpdateV1ApiWorkerJobsJobIdUpdatesPostMutationFetcher = (jobId: string, options?: SecondParameter<typeof axiosInstance>) => {
+  return (_: Key, { arg }: { arg: JobProgressUpdate }) => {
+    return addJobUpdateV1ApiWorkerJobsJobIdUpdatesPost(jobId, arg, options);
+  }
+}
+export const getAddJobUpdateV1ApiWorkerJobsJobIdUpdatesPostMutationKey = (jobId: string,) => [`/v1/api/worker/jobs/${jobId}/updates`] as const;
+
+export type AddJobUpdateV1ApiWorkerJobsJobIdUpdatesPostMutationResult = NonNullable<Awaited<ReturnType<typeof addJobUpdateV1ApiWorkerJobsJobIdUpdatesPost>>>
+export type AddJobUpdateV1ApiWorkerJobsJobIdUpdatesPostMutationError = HTTPValidationError
+
+/**
+ * @summary Add Job Update
+ */
+export const useAddJobUpdateV1ApiWorkerJobsJobIdUpdatesPost = <TError = HTTPValidationError>(
+  jobId: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof addJobUpdateV1ApiWorkerJobsJobIdUpdatesPost>>, TError, Key, JobProgressUpdate, Awaited<ReturnType<typeof addJobUpdateV1ApiWorkerJobsJobIdUpdatesPost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
+) => {
+
+  const {swr: swrOptions, request: requestOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getAddJobUpdateV1ApiWorkerJobsJobIdUpdatesPostMutationKey(jobId);
+  const swrFn = getAddJobUpdateV1ApiWorkerJobsJobIdUpdatesPostMutationFetcher(jobId, requestOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+
+/**
+ * Update the status of a specific job-device pair.
+ * @summary Update Job Device Status
+ */
+export const updateJobDeviceStatusV1ApiWorkerJobDevicesStatusPost = (
+    jobDeviceStatusUpdate: JobDeviceStatusUpdate,
+ options?: SecondParameter<typeof axiosInstance>) => {
+    return axiosInstance<unknown>(
+    {url: `/v1/api/worker/job-devices/status`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: jobDeviceStatusUpdate
+    },
+    options);
+  }
+
+
+
+export const getUpdateJobDeviceStatusV1ApiWorkerJobDevicesStatusPostMutationFetcher = ( options?: SecondParameter<typeof axiosInstance>) => {
+  return (_: Key, { arg }: { arg: JobDeviceStatusUpdate }) => {
+    return updateJobDeviceStatusV1ApiWorkerJobDevicesStatusPost(arg, options);
+  }
+}
+export const getUpdateJobDeviceStatusV1ApiWorkerJobDevicesStatusPostMutationKey = () => [`/v1/api/worker/job-devices/status`] as const;
+
+export type UpdateJobDeviceStatusV1ApiWorkerJobDevicesStatusPostMutationResult = NonNullable<Awaited<ReturnType<typeof updateJobDeviceStatusV1ApiWorkerJobDevicesStatusPost>>>
+export type UpdateJobDeviceStatusV1ApiWorkerJobDevicesStatusPostMutationError = HTTPValidationError
+
+/**
+ * @summary Update Job Device Status
+ */
+export const useUpdateJobDeviceStatusV1ApiWorkerJobDevicesStatusPost = <TError = HTTPValidationError>(
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof updateJobDeviceStatusV1ApiWorkerJobDevicesStatusPost>>, TError, Key, JobDeviceStatusUpdate, Awaited<ReturnType<typeof updateJobDeviceStatusV1ApiWorkerJobDevicesStatusPost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
+) => {
+
+  const {swr: swrOptions, request: requestOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getUpdateJobDeviceStatusV1ApiWorkerJobDevicesStatusPostMutationKey();
+  const swrFn = getUpdateJobDeviceStatusV1ApiWorkerJobDevicesStatusPostMutationFetcher(requestOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+
+/**
+ * Upload a file to MinIO storage.
+
+The file bytes should be sent as the raw request body.
+Query params: bucket, object_name
+ * @summary Upload File
+ */
+export const uploadFileV1ApiWorkerStorageUploadPost = (
+    params: UploadFileV1ApiWorkerStorageUploadPostParams,
+ options?: SecondParameter<typeof axiosInstance>) => {
+    return axiosInstance<unknown>(
+    {url: `/v1/api/worker/storage/upload`, method: 'POST',
+        params
+    },
+    options);
+  }
+
+
+
+export const getUploadFileV1ApiWorkerStorageUploadPostMutationFetcher = (params: UploadFileV1ApiWorkerStorageUploadPostParams, options?: SecondParameter<typeof axiosInstance>) => {
+  return (_: Key, __: { arg: Arguments }) => {
+    return uploadFileV1ApiWorkerStorageUploadPost(params, options);
+  }
+}
+export const getUploadFileV1ApiWorkerStorageUploadPostMutationKey = (params: UploadFileV1ApiWorkerStorageUploadPostParams,) => [`/v1/api/worker/storage/upload`, ...(params ? [params]: [])] as const;
+
+export type UploadFileV1ApiWorkerStorageUploadPostMutationResult = NonNullable<Awaited<ReturnType<typeof uploadFileV1ApiWorkerStorageUploadPost>>>
+export type UploadFileV1ApiWorkerStorageUploadPostMutationError = HTTPValidationError
+
+/**
+ * @summary Upload File
+ */
+export const useUploadFileV1ApiWorkerStorageUploadPost = <TError = HTTPValidationError>(
+  params: UploadFileV1ApiWorkerStorageUploadPostParams, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof uploadFileV1ApiWorkerStorageUploadPost>>, TError, Key, Arguments, Awaited<ReturnType<typeof uploadFileV1ApiWorkerStorageUploadPost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
+) => {
+
+  const {swr: swrOptions, request: requestOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getUploadFileV1ApiWorkerStorageUploadPostMutationKey(params);
+  const swrFn = getUploadFileV1ApiWorkerStorageUploadPostMutationFetcher(params, requestOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
 
   return {
     swrKey,

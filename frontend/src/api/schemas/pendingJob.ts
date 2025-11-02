@@ -6,8 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface HostWithStatus {
-  host_name?: string;
-  last_seen?: string;
+export interface PendingJob {
+  job_device_id: string;
+  job_id: string;
+  config_id: string;
+  device_id: string;
+  device_uuid: string;
+  duration: number;
   status: string;
 }

@@ -6,6 +6,7 @@ from src.api.queries import router as queries_router
 from src.api.requests import router as requests_router
 from src.api.results import router as results_router
 from src.api.traces import router as traces_router
+from src.api.worker import router as worker_router
 
 __all__ = [
     "hosts_router",
@@ -16,4 +17,5 @@ __all__ = [
     "results_router",
     "requests_router",
     "group_results_router",
+    "worker_router",
 ]

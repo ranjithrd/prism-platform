@@ -1,11 +1,9 @@
 import asyncio
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import desc, select
-from starlette.responses import HTMLResponse, RedirectResponse
-from starlette.staticfiles import StaticFiles
+from starlette.responses import HTMLResponse
 
 from src.api import configurations_router
 from src.api import devices_router as api_devices_router
@@ -14,14 +12,7 @@ from src.api import hosts_router
 from src.api import queries_router as api_queries_router
 from src.api import requests_router, results_router
 from src.api import traces_router as api_traces_router
-from src.common.db import Trace, get_session
-from src.controllers import (
-    configs_router,
-    devices_router,
-    queries_router,
-    traces_router,
-)
-from src.controllers.jobs import app as jobs_router
+from src.api import worker_router
 from src.services.startup import handle_on_startup, update_host_status_service
 
 
@@ -67,15 +58,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# Include HTML/template-based routers
-app.include_router(devices_router)
-app.include_router(traces_router)
-app.include_router(queries_router)
-app.include_router(configs_router)
-app.include_router(jobs_router)
-
 # Include REST API routers
 app.include_router(hosts_router)
 app.include_router(api_devices_router)
@@ -85,10 +67,9 @@ app.include_router(api_queries_router)
 app.include_router(results_router)
 app.include_router(requests_router)
 app.include_router(api_group_results_router)
+app.include_router(worker_router)
 
 
 @app.get("/", response_class=HTMLResponse)
-def read_root(request: Request, session=Depends(get_session)):
-    traces = session.exec(select(Trace).order_by(desc(Trace.trace_timestamp))).all()
-
-    return RedirectResponse("/traces", status_code=303)
+def read_root():
+    return "Prism Platform API"

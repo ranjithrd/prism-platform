@@ -5,9 +5,9 @@
  * API for managing traces, configurations, devices, and queries
  * OpenAPI spec version: 1.0.0
  */
+import type { JobStatusUpdateResultSummary } from './jobStatusUpdateResultSummary';
 
-export interface HostWithStatus {
-  host_name?: string;
-  last_seen?: string;
+export interface JobStatusUpdate {
   status: string;
+  result_summary?: JobStatusUpdateResultSummary;
 }

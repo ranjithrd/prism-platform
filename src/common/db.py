@@ -1,14 +1,22 @@
 import datetime
 import os
+import uuid
 from typing import Annotated
 
 from dotenv import load_dotenv
-from sqlmodel import Field, Session, SQLModel, create_engine
+from sqlmodel import Field, Relationship, Session, SQLModel, create_engine
 
 load_dotenv()
 
 db_url = os.getenv("DATABASE_URL")
 engine = create_engine(db_url)
+
+
+class Host(SQLModel, table=True):
+    __tablename__ = "hosts"
+
+    host_name: str = Field(str, primary_key=True)
+    last_seen: datetime.datetime = Field(datetime.datetime, nullable=True)
 
 
 class Device(SQLModel, table=True):
@@ -17,17 +25,9 @@ class Device(SQLModel, table=True):
     device_id: str = Field(str, primary_key=True)
     device_name: str = Field(str, nullable=False)
     device_uuid: str = Field(str, nullable=True)
-
-
-class DeviceWithRedisInfo(Device):
-    status: str | None = None
-    host: str | None = None
-
-
-class Host(SQLModel, table=True):
-    __tablename__ = "hosts"
-
-    host_name: str = Field(str, primary_key=True)
+    last_status: str | None = Field(default=None, nullable=True)
+    last_seen: datetime.datetime | None = Field(default=None, nullable=True)
+    host: str | None = Field(default=None, nullable=True)
 
 
 class Trace(SQLModel, table=True):
@@ -81,22 +81,57 @@ class Config(SQLModel, table=True):
     )
 
 
+class JobDevice(SQLModel, table=True):
+    __tablename__ = "job_devices"
+
+    id: str = Field(primary_key=True, default_factory=lambda: str(uuid.uuid4()))
+    job_id: str = Field(foreign_key="job_requests.job_id")
+    device_id: str = Field(foreign_key="devices.device_id")
+    status: str = Field(default="pending")  # pending, running, completed, failed
+
+    # Relationship - will be set up after JobRequest is defined
+    job_request: "JobRequest" = Relationship(back_populates="job_devices")
+
+
 class JobRequest(SQLModel, table=True):
     __tablename__ = "job_requests"
 
     job_id: str = Field(primary_key=True)
     config_id: str = Field(foreign_key="configs.config_id")
-    device_serials: str = Field()
     status: str = Field()
     duration: int = Field(nullable=True)
     created_at: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     updated_at: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
 
+    # join table with job device as part of preload
+    job_devices: list[JobDevice] = Relationship(back_populates="job_request")
+
     result_summary: str | None = Field(default=None, nullable=True)
 
 
+class JobUpdate(SQLModel, table=True):
+    __tablename__ = "job_updates"
+
+    update_id: str = Field(primary_key=True, default_factory=lambda: str(uuid.uuid4()))
+    job_id: str = Field(foreign_key="job_requests.job_id")
+    device_id: str = Field(
+        foreign_key="devices.device_id"
+    )  # Changed from device_serial
+    status: str = Field()
+    message: str | None = Field(default=None, nullable=True)
+    timestamp: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
+    trace_id: str | None = Field(
+        default=None, foreign_key="traces.trace_id", nullable=True
+    )
+
+
 def create_tables():
-    SQLModel.metadata.create_all(engine)
+    """Create all tables. Handles existing tables gracefully."""
+    try:
+        SQLModel.metadata.create_all(engine, checkfirst=True)
+    except Exception as e:
+        # Log but don't fail if tables already exist
+        print(f"Warning during table creation (may be harmless): {e}")
 
 
 def get_session():

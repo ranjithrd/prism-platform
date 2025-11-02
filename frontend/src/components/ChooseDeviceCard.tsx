@@ -1,16 +1,16 @@
 import { Button, Card, CardBody, CardFooter, Checkbox } from "@heroui/react"
-import type { DeviceWithRedisInfo } from "../api/schemas"
+import type { Device } from "../api/schemas"
 
 export default function ChooseDeviceCard({
 	device,
 	isChosen,
 	setIsChosen,
 }: {
-	device: DeviceWithRedisInfo
+	device: Device
 	isChosen: boolean
 	setIsChosen: (isChosen: boolean) => void
 }) {
-	const isDisabled = device.status !== "online"
+	const isDisabled = device.last_status !== "online"
 
 	return (
 		<Card
@@ -23,7 +23,9 @@ export default function ChooseDeviceCard({
 			isDisabled={isDisabled}
 		>
 			<CardBody className="flex flex-col justify-center h-full gap-0">
-				{isDisabled && <p className="italic font-bold">This device is offline!</p>}
+				{isDisabled && (
+					<p className="italic font-bold">This device is offline!</p>
+				)}
 				<p className="text-xl font-semibold">{device.device_name}</p>
 				<p className="">{device.device_uuid}</p>
 				<p className="">

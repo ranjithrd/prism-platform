@@ -15,6 +15,9 @@ PORT ?=8030
 run-worker:
 	poetry run gunicorn -w 1 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:$(PORT) src.worker:app 
 
+dev-worker:
+	poetry run uvicorn src.worker:app --reload --port $(PORT)
+
 install-frontend:
 	cd frontend && npm install && cd ..
 
