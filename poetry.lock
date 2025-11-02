@@ -577,6 +577,23 @@ MarkupSafe = ">=2.0"
 i18n = ["Babel (>=2.7)"]
 
 [[package]]
+name = "jsonwebtoken"
+version = "1.0.0"
+description = "JSON Web Token implementation in Python (Fork from Pyjsonwebtoken)"
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "jsonwebtoken-1.0.0.tar.gz", hash = "sha256:5e069b83919b49f7348fa630027408da94e2a2ec1adc2652f16ec00d4b772e01"},
+]
+
+[package.extras]
+crypto = ["cryptography (>=3.4.0)"]
+dev = ["coverage[toml] (==5.0.4)", "cryptography (>=3.4.0)", "pre-commit", "pytest (>=6.0.0,<7.0.0)", "sphinx (>=4.5.0,<5.0.0)", "sphinx-rtd-theme", "zope.interface"]
+docs = ["sphinx (>=4.5.0,<5.0.0)", "sphinx-rtd-theme", "zope.interface"]
+tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
+
+[[package]]
 name = "markdown-it-py"
 version = "4.0.0"
 description = "Python port of markdown-it. Markdown parsing, done right!"
@@ -2016,4 +2033,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12"
-content-hash = "a8c57127a3fe5e9a055f332610435880ccd3861388be98a8f601c17b91dcb54d"
+content-hash = "8261b064731369b159fbb16776630e3f7e4de229d4974388f934a5aae84a5023"

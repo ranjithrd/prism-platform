@@ -6,6 +6,8 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type SearchQueriesQueriesSearchGetParams = {
-term?: string;
-};
+export interface GenerateHostKeyResponse {
+  status: string;
+  host_name: string;
+  host_key: string;
+}

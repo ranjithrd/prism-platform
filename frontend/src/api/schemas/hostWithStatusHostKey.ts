@@ -6,9 +6,4 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface BodyCreateJobRequestJobsRunPost {
-  config_id: string;
-  device_serials: string;
-  duration?: number;
-  redirect_url?: string;
-}
+export type HostWithStatusHostKey = string | null;

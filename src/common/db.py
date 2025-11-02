@@ -16,7 +16,9 @@ class Host(SQLModel, table=True):
     __tablename__ = "hosts"
 
     host_name: str = Field(str, primary_key=True)
-    last_seen: datetime.datetime = Field(datetime.datetime, nullable=True)
+    host_type: str = Field(str, nullable=True)
+    host_key: str | None = Field(str, nullable=True)
+    last_seen: datetime.datetime | None = Field(datetime.datetime, nullable=True)
 
 
 class Device(SQLModel, table=True):

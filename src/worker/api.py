@@ -1,10 +1,9 @@
 import logging
-import os
 from typing import List, Optional
 
 import httpx
 
-from src.services.worker_config import worker_config
+from .config import worker_config
 
 logger = logging.getLogger(__name__)
 
@@ -12,29 +11,24 @@ logger = logging.getLogger(__name__)
 class WorkerAPIClient:
     """HTTP client for calling the worker API endpoints."""
 
-    def __init__(self, base_url: Optional[str] = None, token: Optional[str] = None):
-        # Use worker_config as the source of truth, with fallback to env vars
-        self.base_url = (
-            base_url
-            or worker_config.api_url
-            or os.getenv("WORKER_API_URL", "http://localhost:8000")
-        )
-        self.token = (
-            token
-            or worker_config.auth_token
-            or os.getenv("WORKER_API_TOKEN", "default-token")
-        )
-        self.headers = {"Authorization": f"Bearer {self.token}"}
+    def __init__(self):
         self.timeout = 30.0
+        worker_config.refresh_config()
 
-        logger.info(f"WorkerAPIClient initialized with base_url={self.base_url}")
+        logger.info(
+            f"WorkerAPIClient initialized with base_url={worker_config.api_url}"
+        )
 
     def _make_request(self, method: str, endpoint: str, **kwargs):
         """Make HTTP request with error handling and logging."""
-        url = f"{self.base_url}{endpoint}"
+        worker_config.refresh_config()
+
+        headers = {"Authorization": f"Bearer {worker_config.auth_token}"}
+
+        url = f"{worker_config.api_url}{endpoint}"
         try:
             with httpx.Client(timeout=self.timeout) as client:
-                response = client.request(method, url, headers=self.headers, **kwargs)
+                response = client.request(method, url, headers=headers, **kwargs)
                 response.raise_for_status()
                 return response.json() if response.content else None
         except httpx.HTTPStatusError as e:
@@ -86,14 +80,16 @@ class WorkerAPIClient:
 
         Sends the file bytes as raw request body with bucket and object_name as query params.
         """
-        url = f"{self.base_url}/v1/api/worker/storage/upload"
+        worker_config.refresh_config()
+
+        url = f"{worker_config.api_url}/v1/api/worker/storage/upload"
         try:
             with httpx.Client(timeout=self.timeout) as client:
                 response = client.post(
                     url,
                     params={"bucket": bucket, "object_name": object_name},
                     content=trace_file,
-                    headers=self.headers,
+                    headers={"Authorization": f"Bearer {worker_config.auth_token}"},
                 )
                 response.raise_for_status()
                 result = response.json() if response.content else None

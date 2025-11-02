@@ -6,17 +6,9 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel
 from sqlmodel import or_, select
 
-from src.common.db import (
-    Config,
-    Device,
-    Host,
-    JobDevice,
-    JobRequest,
-    JobUpdate,
-    SessionDepType,
-    Trace,
-    get_session,
-)
+from src.common.db import (Config, Device, Host, JobDevice, JobRequest,
+                           JobUpdate, SessionDepType, Trace, get_session)
+from src.common.host_token import decode_host_token
 from src.common.minio import MinioHelper, get_minio_client
 
 router = APIRouter(prefix="/v1/api/worker", tags=["worker"])
@@ -37,12 +29,24 @@ async def verify_worker_token(
 
     # treat bearer token as hostname
     token = authorization[len("Bearer ") :].strip()
+    host_details = decode_host_token(token)
+
+    if not host_details:
+        raise HTTPException(status_code=401, detail="Invalid host token")
+
     host = session.exec(
-        select(Host).where(Host.host_name == get_hostname_from_token(token))
+        select(Host).where(Host.host_name == host_details.hostname)
     ).first()
+
     if not host:
-        return True
+        raise HTTPException(status_code=401, detail="Host not registered")
+
+    if host.host_key != token:
+        raise HTTPException(status_code=401, detail="Invalid host key")
+
     host.last_seen = datetime.now(timezone.utc)
+    host.host_type = "worker"
+
     session.add(host)
     session.commit()
 

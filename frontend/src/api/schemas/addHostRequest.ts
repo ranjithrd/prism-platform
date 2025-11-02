@@ -6,7 +6,6 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface BodyEditConfigConfigsConfigIdEditPost {
-  config_name: string;
-  config_text: string;
+export interface AddHostRequest {
+  host_name: string;
 }

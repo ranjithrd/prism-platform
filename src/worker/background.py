@@ -6,8 +6,9 @@ from time import sleep
 
 from src.common.adb import adb_devices, is_device_connected
 from src.common.hostname import get_hostname
-from src.services.run_perfetto import run_perfetto_trace
-from src.services.worker_api import get_worker_client
+
+from .api import get_worker_client
+from .run_perfetto import run_perfetto_trace
 
 JOB_REQUEST_STREAM_NAME = "job_requests"
 
@@ -311,7 +312,7 @@ def run_listen_pubsub():
     while True:
         try:
             background_task()
-            sleep(1)
+            sleep(5)
         except Exception as e:
             print(f"An error occurred in the pubsub listener: {e}")
-            sleep(1)
+            sleep(5)

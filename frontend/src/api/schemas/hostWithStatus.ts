@@ -5,9 +5,13 @@
  * API for managing traces, configurations, devices, and queries
  * OpenAPI spec version: 1.0.0
  */
+import type { HostWithStatusHostKey } from './hostWithStatusHostKey';
+import type { HostWithStatusLastSeen } from './hostWithStatusLastSeen';
 
 export interface HostWithStatus {
   host_name?: string;
-  last_seen?: string;
+  host_type?: string;
+  host_key?: HostWithStatusHostKey;
+  last_seen?: HostWithStatusLastSeen;
   status: string;
 }

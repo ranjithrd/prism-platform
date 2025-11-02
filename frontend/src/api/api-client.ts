@@ -18,6 +18,7 @@ import type {
 } from 'swr/mutation';
 
 import type {
+  AddHostRequest,
   BodyCreateTraceV1ApiTracesPost,
   Config,
   ConfigCreate,
@@ -31,6 +32,7 @@ import type {
   DeviceUpdateRequest,
   ExportResultV1ApiGroupResultsQueryIdExportGetParams,
   ExportResultV1ApiResultsTraceIdQueryIdExportGetParams,
+  GenerateHostKeyResponse,
   GetConfigurationTracesV1ApiConfigurationsConfigIdTracesGetParams,
   GetDatatablesResultV1ApiGroupResultsQueryIdDatatablesGetParams,
   GetJsonResultV1ApiGroupResultsQueryIdJsonGetParams,
@@ -93,6 +95,98 @@ export const useGetHostsV1ApiHostsGet = <TError = unknown>(
   const swrFn = () => getHostsV1ApiHostsGet(requestOptions)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+
+/**
+ * Add a new host
+ * @summary Add Host
+ */
+export const addHostV1ApiHostsPost = (
+    addHostRequest: AddHostRequest,
+ options?: SecondParameter<typeof axiosInstance>) => {
+    return axiosInstance<unknown>(
+    {url: `/v1/api/hosts/`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: addHostRequest
+    },
+    options);
+  }
+
+
+
+export const getAddHostV1ApiHostsPostMutationFetcher = ( options?: SecondParameter<typeof axiosInstance>) => {
+  return (_: Key, { arg }: { arg: AddHostRequest }) => {
+    return addHostV1ApiHostsPost(arg, options);
+  }
+}
+export const getAddHostV1ApiHostsPostMutationKey = () => [`/v1/api/hosts/`] as const;
+
+export type AddHostV1ApiHostsPostMutationResult = NonNullable<Awaited<ReturnType<typeof addHostV1ApiHostsPost>>>
+export type AddHostV1ApiHostsPostMutationError = HTTPValidationError
+
+/**
+ * @summary Add Host
+ */
+export const useAddHostV1ApiHostsPost = <TError = HTTPValidationError>(
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof addHostV1ApiHostsPost>>, TError, Key, AddHostRequest, Awaited<ReturnType<typeof addHostV1ApiHostsPost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
+) => {
+
+  const {swr: swrOptions, request: requestOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getAddHostV1ApiHostsPostMutationKey();
+  const swrFn = getAddHostV1ApiHostsPostMutationFetcher(requestOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+
+/**
+ * Generate and set a new key for the host
+ * @summary Generate Key
+ */
+export const generateKeyV1ApiHostsHostIdKeyPost = (
+    hostId: string,
+ options?: SecondParameter<typeof axiosInstance>) => {
+    return axiosInstance<GenerateHostKeyResponse>(
+    {url: `/v1/api/hosts/${hostId}/key`, method: 'POST'
+    },
+    options);
+  }
+
+
+
+export const getGenerateKeyV1ApiHostsHostIdKeyPostMutationFetcher = (hostId: string, options?: SecondParameter<typeof axiosInstance>) => {
+  return (_: Key, __: { arg: Arguments }) => {
+    return generateKeyV1ApiHostsHostIdKeyPost(hostId, options);
+  }
+}
+export const getGenerateKeyV1ApiHostsHostIdKeyPostMutationKey = (hostId: string,) => [`/v1/api/hosts/${hostId}/key`] as const;
+
+export type GenerateKeyV1ApiHostsHostIdKeyPostMutationResult = NonNullable<Awaited<ReturnType<typeof generateKeyV1ApiHostsHostIdKeyPost>>>
+export type GenerateKeyV1ApiHostsHostIdKeyPostMutationError = HTTPValidationError
+
+/**
+ * @summary Generate Key
+ */
+export const useGenerateKeyV1ApiHostsHostIdKeyPost = <TError = HTTPValidationError>(
+  hostId: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof generateKeyV1ApiHostsHostIdKeyPost>>, TError, Key, Arguments, Awaited<ReturnType<typeof generateKeyV1ApiHostsHostIdKeyPost>>> & { swrKey?: string }, request?: SecondParameter<typeof axiosInstance>}
+) => {
+
+  const {swr: swrOptions, request: requestOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getGenerateKeyV1ApiHostsHostIdKeyPostMutationKey(hostId);
+  const swrFn = getGenerateKeyV1ApiHostsHostIdKeyPostMutationFetcher(hostId, requestOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
 
   return {
     swrKey,

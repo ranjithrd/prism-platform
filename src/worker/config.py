@@ -1,6 +1,8 @@
 import json
 import os
 
+from src.common.host_token import decode_host_token
+
 WORKER_CONFIG_PATH = "config.json"
 
 
@@ -29,8 +31,8 @@ def set_value_in_config(key, value):
 
 
 class WorkerConfig:
-    hostname = get_value_from_config("hostname", "localhost")
-    api_url = get_value_from_config("api_url", "http://localhost:8000")
+    hostname = ""
+    api_url = ""
     auth_token = get_value_from_config("auth_token", "")
 
     def __init__(self):
@@ -39,16 +41,27 @@ class WorkerConfig:
                 json.dump({}, f)
 
     @classmethod
-    def update_config(cls, hostname=None, api_url=None, auth_token=None):
-        if hostname is not None:
-            cls.hostname = hostname
-            set_value_in_config("hostname", hostname)
-        if api_url is not None:
-            cls.api_url = api_url
-            set_value_in_config("api_url", api_url)
+    def update_config(cls, auth_token=None):
         if auth_token is not None:
             cls.auth_token = auth_token
             set_value_in_config("auth_token", auth_token)
+
+    def refresh_config(self):
+        at = get_value_from_config("auth_token", "")
+
+        if not at:
+            self.hostname = ""
+            self.api_url = ""
+            self.auth_token = ""
+            return
+
+        self.auth_token = at
+
+        decoded_token = decode_host_token(at, ignore_secret=True)
+        self.hostname = decoded_token.hostname if decoded_token else "localhost"
+        self.api_url = (
+            decoded_token.api_url if decoded_token else "http://localhost:8000"
+        )
 
 
 # singleton instance
