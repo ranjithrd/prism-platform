@@ -1,10 +1,10 @@
 import { Button, Card, CardBody, CardFooter } from "@heroui/react"
-import type { TraceWithDevice } from "../api/schemas"
+import type { SrcApiTracesTraceWithDevice } from "../api/schemas"
 import { humanizeDate } from "../utils/humanize"
 import { ArrowRightIcon } from "@heroicons/react/20/solid"
 import { Link } from "wouter"
 
-export default function TraceCard({ trace }: { trace: TraceWithDevice }) {
+export default function TraceCard({ trace }: { trace: SrcApiTracesTraceWithDevice }) {
 	return (
 		<Link href={`/traces/${trace.trace_id}`} className="w-full focus-none">
 			<Card className="w-full h-full p-2" isPressable>
