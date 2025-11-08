@@ -3,15 +3,13 @@ import signal
 import subprocess
 import time
 import uuid
-from typing import Optional, Union
-
-from src.common.db import Config
+from typing import Optional
 
 PERFETTO_SCRIPT_PATH = "src/tools/record_android_trace.py"
 
 
 def run_perfetto_trace(
-    device_serial: str, config: Union[Config, dict], duration_seconds: int = 10
+    device_serial: str, config, duration_seconds: int = 10
 ) -> Optional[str]:
     """
     Runs a Perfetto trace using the official helper script and manages its

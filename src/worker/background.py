@@ -4,9 +4,9 @@ import uuid
 from datetime import datetime, timezone
 
 from src.common.adb import adb_devices, is_device_connected
-from src.common.hostname import get_hostname
 
 from .api import get_worker_client
+from .config import worker_config
 from .run_perfetto import run_perfetto_trace
 
 JOB_REQUEST_STREAM_NAME = "job_requests"
@@ -50,9 +50,10 @@ def update_device_statuses():
     """Update device statuses in the database based on ADB connections.
     Also notifies GUI if callback is registered.
     """
+    worker_config.refresh_config()
     devices = adb_devices()
     online_devices = []
-    hostname = get_hostname()
+    hostname = worker_config.hostname
     client = get_worker_client()
 
     print("Logging connected devices:")
@@ -150,6 +151,7 @@ def process_job_device(
     try:
         # Get the worker API client
         client = get_worker_client()
+        worker_config.refresh_config()
 
         # Mark JobDevice as running
         client.update_job_device_status(job_device_id, "running")
@@ -252,7 +254,7 @@ def process_job_device(
             "device_id": device_id,
             "trace_timestamp": datetime.now(timezone.utc).isoformat(),
             "trace_filename": minio_filename,
-            "host_name": get_hostname(),
+            "host_name": worker_config.hostname,
             "configuration_id": config.get("config_id"),
         }
 

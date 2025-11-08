@@ -15,6 +15,9 @@ PORT ?=8030
 run-worker:
 	poetry run python run_gui.py
 
+build-worker:
+	poetry run pyinstaller PRISM_Platform.spec --noconfirm
+
 install-frontend:
 	cd frontend && npm install && cd ..
 
