@@ -8,6 +8,7 @@ from src.common.adb import adb_devices, is_device_connected
 from .api import get_worker_client
 from .config import worker_config
 from .run_perfetto import run_perfetto_trace
+from .run_simpleperf import run_simpleperf_trace
 
 JOB_REQUEST_STREAM_NAME = "job_requests"
 
@@ -216,9 +217,16 @@ def process_job_device(
             "Collecting trace...",
         )
 
-        local_trace_path = run_perfetto_trace(
-            device_uuid, config, duration_seconds=duration
-        )
+        local_trace_path, local_html_path = None, None
+
+        if config["tracing_tool"] == "perfetto":
+            local_trace_path, local_html_path = run_perfetto_trace(
+                device_uuid, config, duration_seconds=duration
+            )
+        elif config["tracing_tool"] == "simpleperf":
+            local_trace_path, local_html_path = run_simpleperf_trace(
+                device_uuid, config, duration_seconds=duration
+            )
 
         if not local_trace_path:
             print(f"Failed to collect trace from {device_uuid}")
@@ -230,6 +238,29 @@ def process_job_device(
                 "Failed to collect trace",
             )
             return
+
+        html_minio_filename = None
+        if local_html_path:
+            print(f"Generated HTML trace view at: {local_html_path}")
+            # Update status to uploading
+            client.send_job_update(
+                job_id,
+                device_id,
+                "uploading",
+                "Uploading trace to storage...",
+            )
+            # Upload HTML file
+            html_file_uuid = str(uuid.uuid4())
+            html_minio_filename = (
+                f"{html_file_uuid}-{config.get('config_name', 'config')}.html"
+            )
+            with open(local_html_path, "rb") as f:
+                client.upload_trace_file("traces", html_minio_filename, f.read())
+            # Clean up local HTML file
+            try:
+                os.unlink(local_html_path)
+            except Exception:
+                pass
 
         client.send_job_update(
             job_id,
@@ -244,6 +275,11 @@ def process_job_device(
             f"{file_uuid}-{config.get('config_name', 'config')}.perfetto-trace"
         )
 
+        if config["tracing_tool"] == "simpleperf":
+            minio_filename = (
+                f"{file_uuid}-{config.get('config_name', 'config')}-simpleperf.data"
+            )
+
         with open(local_trace_path, "rb") as f:
             client.upload_trace_file("traces", minio_filename, f.read())
 
@@ -257,6 +293,13 @@ def process_job_device(
             "host_name": worker_config.hostname,
             "configuration_id": config.get("config_id"),
         }
+
+        if local_html_path:
+            print("Attaching local html file to trace record")
+            trace_payload["html_trace_filename"] = html_minio_filename
+
+        print("Creating trace record in database...")
+        print(trace_payload)
 
         trace = client.create_trace_record(trace_payload)
 

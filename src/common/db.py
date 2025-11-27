@@ -38,6 +38,7 @@ class Trace(SQLModel, table=True):
     trace_id: str = Field(str, primary_key=True)
     trace_timestamp: datetime.datetime = Field(datetime.datetime, nullable=False)
     trace_filename: str = Field(str, nullable=False)
+    trace_html_filename: str = Field(str, nullable=False)
     trace_name: str = Field(str, nullable=False)
     device_id: str = Field(default=None, foreign_key="devices.device_id")
     host_name: str = Field(default=None, foreign_key="hosts.host_name")

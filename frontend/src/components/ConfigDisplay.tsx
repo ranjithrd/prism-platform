@@ -1,34 +1,48 @@
 import React, { useState } from "react"
 import { Button, Tooltip } from "@heroui/react"
 import { ClipboardIcon, CheckIcon } from "@heroicons/react/20/solid"
-import CodeView from "./CodeView"
 
 interface ConfigDisplayProps {
 	/** The text content to display, with \n newlines */
 	text: string
+	/** Optional: The tracing tool type to determine formatting */
+	tracingTool?: string
 }
 
-export const ConfigDisplay: React.FC<ConfigDisplayProps> = ({ text }) => {
+export const ConfigDisplay: React.FC<ConfigDisplayProps> = ({
+	text,
+	tracingTool,
+}) => {
 	const [isCopied, setIsCopied] = useState(false)
+
+	// Try to format JSON for simpleperf configs
+	const displayText = React.useMemo(() => {
+		if (tracingTool === "simpleperf") {
+			try {
+				const parsed = JSON.parse(text)
+				return JSON.stringify(parsed, null, 2)
+			} catch {
+				return text
+			}
+		}
+		return text
+	}, [text, tracingTool])
 
 	const handleCopy = async () => {
 		if (!navigator.clipboard) {
-			// Clipboard API not available
 			return
 		}
 		try {
 			await navigator.clipboard.writeText(text)
 			setIsCopied(true)
-			setTimeout(() => setIsCopied(false), 2000) // Reset icon after 2s
+			setTimeout(() => setIsCopied(false), 2000)
 		} catch (err) {
 			console.error("Failed to copy text: ", err)
 		}
 	}
 
 	return (
-		// Use `relative` to position the copy button
 		<div className="relative p-4 border rounded-lg border-default-200 bg-default-50">
-			{/* Copy Button */}
 			<Tooltip
 				content={isCopied ? "Copied!" : "Copy config"}
 				placement="top"
@@ -49,7 +63,7 @@ export const ConfigDisplay: React.FC<ConfigDisplayProps> = ({ text }) => {
 			</Tooltip>
 
 			<p className="font-mono text-sm whitespace-pre-wrap wrap-break-word">
-				{text}
+				{displayText}
 			</p>
 		</div>
 	)

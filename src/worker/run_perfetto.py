@@ -10,14 +10,14 @@ PERFETTO_SCRIPT_PATH = "src/tools/record_android_trace.py"
 
 def run_perfetto_trace(
     device_serial: str, config, duration_seconds: int = 10
-) -> Optional[str]:
+) -> tuple[Optional[str], None]:
     """
     Runs a Perfetto trace using the official helper script and manages its
     interactive lifecycle automatically.
     """
     if not os.path.exists(PERFETTO_SCRIPT_PATH):
         print(f"Error: Perfetto script not found at '{PERFETTO_SCRIPT_PATH}'")
-        return None
+        return None, None
 
     # Handle both Config object and dict
     if isinstance(config, dict):
@@ -76,19 +76,19 @@ def run_perfetto_trace(
                 print(f"Perfetto script exited with error code: {proc.returncode}")
                 print("Stdout:", stdout)
                 print("Stderr:", stderr)
-                return None
+                return None, None
         except subprocess.TimeoutExpired:
             print("Perfetto script did not terminate, killing.")
             proc.kill()
             stdout, stderr = proc.communicate()
             print("Stderr:", stderr)
-            return None
+            return None, None
 
     os.unlink(temp_config_path)
 
     if os.path.exists(local_trace_path) and os.path.getsize(local_trace_path) > 1024:
         print(f"Successfully retrieved trace: {local_trace_path}")
-        return local_trace_path
+        return local_trace_path, None
     else:
         print("Trace file was not created or is empty. Check logs for errors.")
-        return None
+        return None, None

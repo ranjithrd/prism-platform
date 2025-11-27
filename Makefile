@@ -1,10 +1,13 @@
 # Installs dependencies from poetry.lock
 install: 
-	poetry install
+	poetry install --with gui
 
 # Runs the app in development mode with auto-reload
 dev: 
 	poetry run uvicorn src.main:app --reload
+
+dev-frontend:
+	cd frontend && npm run dev
 
 # Runs the app in a production-ready way using Gunicorn
 run:

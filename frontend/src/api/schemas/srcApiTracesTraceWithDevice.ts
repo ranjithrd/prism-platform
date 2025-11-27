@@ -5,6 +5,7 @@
  * API for managing traces, configurations, devices, and queries
  * OpenAPI spec version: 1.0.0
  */
+import type { SrcApiTracesTraceWithDeviceTraceHtmlFilename } from './srcApiTracesTraceWithDeviceTraceHtmlFilename';
 import type { SrcApiTracesTraceWithDeviceHostName } from './srcApiTracesTraceWithDeviceHostName';
 import type { SrcApiTracesTraceWithDeviceConfigurationId } from './srcApiTracesTraceWithDeviceConfigurationId';
 
@@ -15,6 +16,7 @@ export interface SrcApiTracesTraceWithDevice {
   trace_filename: string;
   device_id: string;
   device_name: string;
+  trace_html_filename?: SrcApiTracesTraceWithDeviceTraceHtmlFilename;
   host_name?: SrcApiTracesTraceWithDeviceHostName;
   configuration_id?: SrcApiTracesTraceWithDeviceConfigurationId;
 }

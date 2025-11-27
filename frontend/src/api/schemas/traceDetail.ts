@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { TraceDetailHostName } from './traceDetailHostName';
+import type { TraceDetailTraceHtmlFilename } from './traceDetailTraceHtmlFilename';
 import type { TraceDetailConfigurationId } from './traceDetailConfigurationId';
 import type { TraceDetailConfigurationName } from './traceDetailConfigurationName';
 import type { TraceDetailConfigurationType } from './traceDetailConfigurationType';
@@ -18,6 +19,7 @@ export interface TraceDetail {
   device_id: string;
   device_name: string;
   host_name?: TraceDetailHostName;
+  trace_html_filename?: TraceDetailTraceHtmlFilename;
   configuration_id?: TraceDetailConfigurationId;
   configuration_name?: TraceDetailConfigurationName;
   configuration_type?: TraceDetailConfigurationType;

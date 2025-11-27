@@ -22,6 +22,7 @@ class TraceWithDevice(BaseModel):
     trace_filename: str
     device_id: str
     device_name: str
+    trace_html_filename: Optional[str] = None
     host_name: Optional[str] = None
     configuration_id: Optional[str] = None
 
@@ -37,6 +38,7 @@ class TraceDetail(BaseModel):
     device_id: str
     device_name: str
     host_name: Optional[str] = None
+    trace_html_filename: Optional[str] = None
     configuration_id: Optional[str] = None
     configuration_name: Optional[str] = None
     configuration_type: Optional[str] = None
@@ -87,6 +89,7 @@ def get_traces(
                 device_name=device.device_name,
                 host_name=trace.host_name,
                 configuration_id=trace.configuration_id,
+                trace_html_filename=trace.trace_html_filename,
             )
         )
 
@@ -120,6 +123,7 @@ def get_trace(trace_id: str, session: SessionDepType = Depends(get_session)):
         device_name=device.device_name,
         host_name=trace.host_name,
         configuration_id=trace.configuration_id,
+        trace_html_filename=trace.trace_html_filename,
     )
 
     if config:
@@ -166,6 +170,7 @@ def edit_trace(
         device_name=device.device_name,
         host_name=trace.host_name,
         configuration_id=trace.configuration_id,
+        trace_html_filename=trace.trace_html_filename,
     )
 
 
@@ -191,7 +196,76 @@ def delete_trace(
     session.delete(trace)
     session.commit()
     return {"status": "success", "message": f"Trace {trace_id} deleted"}
-    return {"status": "success", "message": f"Trace {trace_id} deleted"}
+
+
+@router.get("/{trace_id}/html-report")
+def get_html_report(
+    trace_id: str,
+    session: SessionDepType = Depends(get_session),
+    minio_helper: MinioHelper = Depends(get_minio_client),
+):
+    """Get the HTML report for a simpleperf trace (for iframe embedding)"""
+    from fastapi.responses import HTMLResponse
+
+    trace = session.exec(select(Trace).where(Trace.trace_id == trace_id)).first()
+    if not trace:
+        raise HTTPException(status_code=404, detail="Trace not found")
+
+    if not trace.trace_html_filename:
+        raise HTTPException(
+            status_code=404, detail="No HTML report available for this trace"
+        )
+
+    if minio_helper is None:
+        raise HTTPException(status_code=500, detail="Storage not available")
+
+    html_bytes = minio_helper.download_bytes(
+        minio_helper.DEFAULT_BUCKET, trace.trace_html_filename
+    )
+    if html_bytes is None:
+        raise HTTPException(
+            status_code=404, detail="HTML report file not found in storage"
+        )
+
+    return HTMLResponse(content=html_bytes.decode("utf-8"))
+
+
+@router.get("/{trace_id}/html-report-download")
+def download_html_report(
+    trace_id: str,
+    session: SessionDepType = Depends(get_session),
+    minio_helper: MinioHelper = Depends(get_minio_client),
+):
+    """Download the HTML report for a simpleperf trace"""
+    from fastapi.responses import Response
+
+    trace = session.exec(select(Trace).where(Trace.trace_id == trace_id)).first()
+    if not trace:
+        raise HTTPException(status_code=404, detail="Trace not found")
+
+    if not trace.trace_html_filename:
+        raise HTTPException(
+            status_code=404, detail="No HTML report available for this trace"
+        )
+
+    if minio_helper is None:
+        raise HTTPException(status_code=500, detail="Storage not available")
+
+    html_bytes = minio_helper.download_bytes(
+        minio_helper.DEFAULT_BUCKET, trace.trace_html_filename
+    )
+    if html_bytes is None:
+        raise HTTPException(
+            status_code=404, detail="HTML report file not found in storage"
+        )
+
+    return Response(
+        content=html_bytes,
+        media_type="text/html",
+        headers={
+            "Content-Disposition": f"attachment; filename={trace.trace_name.replace(' ', '_')}_report.html"
+        },
+    )
 
 
 @router.post("", response_model=TraceDetail, status_code=201)
@@ -269,6 +343,7 @@ async def create_trace(
             configuration_id=new_trace.configuration_id or "",
             configuration_name=config.config_name if config else None,
             configuration_type=config.tracing_tool if config else None,
+            trace_html_filename=new_trace.trace_html_filename,
         )
 
         return resp

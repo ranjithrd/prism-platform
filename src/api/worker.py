@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -6,10 +7,20 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel
 from sqlmodel import or_, select
 
-from src.common.db import (Config, Device, Host, JobDevice, JobRequest,
-                           JobUpdate, SessionDepType, Trace, get_session)
+from src.common.db import (
+    Config,
+    Device,
+    Host,
+    JobDevice,
+    JobRequest,
+    JobUpdate,
+    SessionDepType,
+    Trace,
+    get_session,
+)
 from src.common.host_token import decode_host_token
 from src.common.minio import MinioHelper, get_minio_client
+from src.common.simpleperf_html import generate_simpleperf_html
 
 router = APIRouter(prefix="/v1/api/worker", tags=["worker"])
 
@@ -94,6 +105,7 @@ class TraceCreateRequest(BaseModel):
     trace_filename: str
     host_name: Optional[str] = None
     configuration_id: Optional[str] = None
+    trace_html_filename: Optional[str] = None
 
 
 class TraceCreateResponse(BaseModel):
@@ -272,6 +284,7 @@ def create_trace(
     trace_data: TraceCreateRequest,
     session: SessionDepType = Depends(get_session),
     authenticated: bool = Depends(verify_worker_token),
+    minio: MinioHelper = Depends(get_minio_client),
 ):
     """Create a trace record."""
     from datetime import datetime
@@ -281,6 +294,7 @@ def create_trace(
         "trace_name": trace_data.trace_name,
         "trace_timestamp": datetime.fromisoformat(trace_data.trace_timestamp),
         "trace_filename": trace_data.trace_filename,
+        "trace_html_filename": trace_data.trace_html_filename,
     }
     if trace_data.device_id:
         trace_kwargs["device_id"] = trace_data.device_id
@@ -288,6 +302,27 @@ def create_trace(
         trace_kwargs["host_name"] = trace_data.host_name
     if trace_data.configuration_id:
         trace_kwargs["configuration_id"] = trace_data.configuration_id
+    if trace_data.trace_html_filename:
+        trace_kwargs["trace_html_filename"] = trace_data.trace_html_filename
+
+    logging.info("Checking if HTML generation is needed for trace...")
+    logging.info(
+        f"trace_html_filename: {trace_data.trace_html_filename}, configuration_id: {trace_data.configuration_id}"
+    )
+
+    if not trace_data.trace_html_filename and trace_data.configuration_id:
+        config = session.exec(
+            select(Config).where(Config.config_id == trace_data.configuration_id)
+        ).first()
+
+        logging.info("Generating HTML for trace based on configuration...")
+        logging.info(f"Trace filename: {trace_data.trace_filename}")
+        logging.info(f"Configuration: {config.tracing_tool}")
+
+        if config and config.tracing_tool == "simpleperf":
+            html_filename = generate_simpleperf_html(trace_data.trace_filename, minio)
+            if html_filename:
+                trace_kwargs["trace_html_filename"] = html_filename
 
     trace = Trace(**trace_kwargs)
     session.add(trace)

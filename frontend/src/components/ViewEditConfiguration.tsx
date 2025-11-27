@@ -79,7 +79,10 @@ export default function ViewEditConfiguration({
 					</Button>
 					<div className="h-2"></div>
 					{showConfig && (
-						<ConfigDisplay text={configuration.config_text} />
+						<ConfigDisplay
+							text={configuration.config_text}
+							tracingTool={configuration.tracing_tool}
+						/>
 					)}
 				</>
 			)}

@@ -2,7 +2,8 @@ import { useState } from "react"
 import type { Config } from "../api/schemas"
 import { Button, Input } from "@heroui/react"
 import StringSelect from "./StringSelect"
-import { CodeEditor } from "./CodeEditor"
+import SimpleperfConfigInput from "./SimpleperfConfigInput"
+import PerfettoConfigInput from "./PerfettoConfigInput"
 
 export default function EditConfiguration({
 	configuration,
@@ -63,19 +64,32 @@ export default function EditConfiguration({
 				}
 				detailedOptions={{
 					perfetto: "Perfetto",
+					simpleperf: "Simpleperf",
 				}}
 			/>
 			<div className="h-4"></div>
-			<p className="mb-1 font-medium">Configuration Text (.pbtxt)</p>
-			<CodeEditor
-				value={editedConfig.config_text || ""}
-				onValueChange={(code) =>
-					setEditedConfig({
-						...editedConfig,
-						config_text: code,
-					})
-				}
-			/>
+			<p className="mb-2 font-medium">Configuration</p>
+			{editedConfig.tracing_tool === "simpleperf" ? (
+				<SimpleperfConfigInput
+					configText={editedConfig.config_text || ""}
+					setConfigText={(text) =>
+						setEditedConfig({
+							...editedConfig,
+							config_text: text,
+						})
+					}
+				/>
+			) : (
+				<PerfettoConfigInput
+					configText={editedConfig.config_text || ""}
+					setConfigText={(text) =>
+						setEditedConfig({
+							...editedConfig,
+							config_text: text,
+						})
+					}
+				/>
+			)}
 			<div className="h-4"></div>
 			<Button
 				color="primary"

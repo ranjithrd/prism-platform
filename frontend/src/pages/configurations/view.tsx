@@ -6,7 +6,7 @@ import {
 import { Layout } from "../../components/Layout"
 import { useState } from "react"
 import { InlineQueries } from "../../components/InlineQueries"
-import type { Config, Query } from "../../api/schemas"
+import type { Config } from "../../api/schemas"
 import { RecentTracesByConfig } from "../../components/RecentTraces"
 import ViewEditConfiguration from "../../components/ViewEditConfiguration"
 import { autoToast } from "../../components/toast"
@@ -90,12 +90,16 @@ export function ConfigurationsViewPage({ id }: { id: string }) {
 				<RecentTracesByConfig config={configuration} />
 			)}
 			<div className="h-4"></div>
-			<InlineQueries
-				showTitle
-				configId={configuration.config_id}
-				onRunAnalysis={onRun}
-			/>
-			<div className="h-4"></div>
+			{(!configuration.tracing_tool || configuration.tracing_tool === "perfetto") && (
+				<>
+					<InlineQueries
+						showTitle
+						configId={configuration.config_id}
+						onRunAnalysis={onRun}
+					/>
+					<div className="h-4"></div>
+				</>
+			)}
 			<Button
 				color="danger"
 				variant="bordered"

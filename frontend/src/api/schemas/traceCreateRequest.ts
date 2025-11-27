@@ -8,6 +8,7 @@
 import type { TraceCreateRequestDeviceId } from './traceCreateRequestDeviceId';
 import type { TraceCreateRequestHostName } from './traceCreateRequestHostName';
 import type { TraceCreateRequestConfigurationId } from './traceCreateRequestConfigurationId';
+import type { TraceCreateRequestTraceHtmlFilename } from './traceCreateRequestTraceHtmlFilename';
 
 export interface TraceCreateRequest {
   trace_id: string;
@@ -17,4 +18,5 @@ export interface TraceCreateRequest {
   trace_filename: string;
   host_name?: TraceCreateRequestHostName;
   configuration_id?: TraceCreateRequestConfigurationId;
+  trace_html_filename?: TraceCreateRequestTraceHtmlFilename;
 }
