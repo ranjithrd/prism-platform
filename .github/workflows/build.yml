@@ -1,0 +1,83 @@
+name: Build PRISM Platform
+
+on:
+    push:
+        tags:
+            - "v*" # Trigger only when you push a tag like v1.0.0
+    workflow_dispatch: # Allows you to manually trigger the build from GitHub UI
+
+jobs:
+    build:
+        name: Build on ${{ matrix.os }}
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                # This will spin up 3 separate computers to build your app
+                os: [windows-latest, ubuntu-latest, macos-latest]
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.10" # Set to your python version
+
+            - name: Install Poetry
+              run: |
+                  pip install poetry
+
+            - name: Install Dependencies
+              run: |
+                  poetry install --no-root
+
+            # --- WINDOWS SPECIFIC BUILD ---
+            - name: Build with PyInstaller (Windows)
+              if: matrix.os == 'windows-latest'
+              run: |
+                  poetry run pyinstaller PRISM_Platform.spec
+                  # Rename output folder to something unique
+                  mv dist/PRISM_Platform dist/PRISM_Platform_Win
+
+            # --- LINUX SPECIFIC BUILD ---
+            - name: Build with PyInstaller (Linux)
+              if: matrix.os == 'ubuntu-latest'
+              run: |
+                  # Linux often needs these libraries for Qt/GUI apps
+                  sudo apt-get update
+                  sudo apt-get install -y libegl1 libxkbcommon-x11-0 libdbus-1-3 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 x11-utils
+                  poetry run pyinstaller PRISM_Platform.spec
+                  mv dist/PRISM_Platform dist/PRISM_Platform_Linux
+
+            # --- MAC SPECIFIC BUILD ---
+            - name: Build with PyInstaller (macOS)
+              if: matrix.os == 'macos-latest'
+              run: |
+                  poetry run pyinstaller PRISM_Platform.spec
+                  # On CI, we usually just want the raw .app zipped up, or a DMG. 
+                  # For now, let's just zip the .app
+                  cd dist
+                  zip -r PRISM_Platform_Mac.zip "PRISM Platform.app"
+
+            # --- UPLOAD ARTIFACTS ---
+            - name: Upload Windows Artifact
+              if: matrix.os == 'windows-latest'
+              uses: actions/upload-artifact@v4
+              with:
+                  name: PRISM-Windows
+                  path: dist/PRISM_Platform_Win
+
+            - name: Upload Linux Artifact
+              if: matrix.os == 'ubuntu-latest'
+              uses: actions/upload-artifact@v4
+              with:
+                  name: PRISM-Linux
+                  path: dist/PRISM_Platform_Linux
+
+            - name: Upload Mac Artifact
+              if: matrix.os == 'macos-latest'
+              uses: actions/upload-artifact@v4
+              with:
+                  name: PRISM-Mac
+                  path: dist/PRISM_Platform_Mac.zip

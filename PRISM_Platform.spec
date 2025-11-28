@@ -162,8 +162,14 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,
+    console=False, # Keep this False for the final build
+    disable_windowed_traceback=False,
+    argv_emulation=True, # <--- CHANGE THIS TO TRUE FOR MAC
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
 )
+
 coll = COLLECT(
     exe,
     a.binaries,
