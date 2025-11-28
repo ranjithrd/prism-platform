@@ -11,6 +11,7 @@ jobs:
         name: Build on ${{ matrix.os }}
         runs-on: ${{ matrix.os }}
         strategy:
+            fail-fast: false
             matrix:
                 os: [windows-latest, ubuntu-latest, macos-latest]
 
@@ -37,13 +38,15 @@ jobs:
             # --- WINDOWS ZIP ---
             - name: Zip Windows Build
               if: matrix.os == 'windows-latest'
+              continue-on-error: true
               run: |
                   # Use PowerShell to zip the folder created by PyInstaller
-                  Compress-Archive -Path "dist/PRISM Platform" -DestinationPath "dist/PRISM_Platform_Win.zip"
+                  Compress-Archive -Path "dist\PRISM Platform" -DestinationPath "dist\PRISM_Platform_Win.zip"
 
             # --- LINUX ZIP ---
             - name: Zip Linux Build
               if: matrix.os == 'ubuntu-latest'
+              continue-on-error: true
               run: |
                   # Install libs just in case
                   sudo apt-get update && sudo apt-get install -y libegl1 libxkbcommon-x11-0 libdbus-1-3 x11-utils
@@ -54,6 +57,7 @@ jobs:
             # --- MAC ZIP ---
             - name: Zip macOS Build
               if: matrix.os == 'macos-latest'
+              continue-on-error: true
               run: |
                   cd dist
                   # Zip the FOLDER (not .app)
@@ -61,22 +65,50 @@ jobs:
 
             # --- UPLOAD ARTIFACTS ---
             - name: Upload Windows Zip
-              if: matrix.os == 'windows-latest'
+              if: matrix.os == 'windows-latest' && hashFiles('dist/PRISM_Platform_Win.zip') != ''
+              continue-on-error: true
               uses: actions/upload-artifact@v4
               with:
                   name: PRISM-Windows
                   path: dist/PRISM_Platform_Win.zip
 
             - name: Upload Linux Zip
-              if: matrix.os == 'ubuntu-latest'
+              if: matrix.os == 'ubuntu-latest' && hashFiles('dist/PRISM_Platform_Linux.zip') != ''
+              continue-on-error: true
               uses: actions/upload-artifact@v4
               with:
                   name: PRISM-Linux
                   path: dist/PRISM_Platform_Linux.zip
 
             - name: Upload Mac Zip
-              if: matrix.os == 'macos-latest'
+              if: matrix.os == 'macos-latest' && hashFiles('dist/PRISM_Platform_Mac.zip') != ''
+              continue-on-error: true
               uses: actions/upload-artifact@v4
               with:
                   name: PRISM-Mac
                   path: dist/PRISM_Platform_Mac.zip
+
+    release:
+        name: Create Release
+        needs: build
+        runs-on: ubuntu-latest
+        if: startsWith(github.ref, 'refs/tags/')
+        permissions:
+            contents: write
+
+        steps:
+            - name: Download all artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  path: artifacts
+
+            - name: Create Release
+              uses: softprops/action-gh-release@v1
+              with:
+                  files: |
+                      artifacts/PRISM-Windows/PRISM_Platform_Win.zip
+                      artifacts/PRISM-Linux/PRISM_Platform_Linux.zip
+                      artifacts/PRISM-Mac/PRISM_Platform_Mac.zip
+                  fail_on_unmatched_files: false
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
