@@ -40,8 +40,8 @@ jobs:
               if: matrix.os == 'windows-latest'
               continue-on-error: true
               run: |
-                  # Use PowerShell to zip the folder created by PyInstaller
-                  Compress-Archive -Path "dist\PRISM Platform" -DestinationPath "dist\PRISM_Platform_Win.zip"
+                  # Use PowerShell to zip the executable created by PyInstaller
+                  Compress-Archive -Path "dist\PRISM Platform.exe" -DestinationPath "dist\PRISM_Platform_Win.zip"
 
             # --- LINUX ZIP ---
             - name: Zip Linux Build
