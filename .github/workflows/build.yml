@@ -3,8 +3,8 @@ name: Build PRISM Platform
 on:
     push:
         tags:
-            - "v*" # Trigger only when you push a tag like v1.0.0
-    workflow_dispatch: # Allows you to manually trigger the build from GitHub UI
+            - "v*"
+    workflow_dispatch: # Allows manual trigger button
 
 jobs:
     build:
@@ -12,7 +12,6 @@ jobs:
         runs-on: ${{ matrix.os }}
         strategy:
             matrix:
-                # This will spin up 3 separate computers to build your app
                 os: [windows-latest, ubuntu-latest, macos-latest]
 
         steps:
@@ -22,60 +21,60 @@ jobs:
             - name: Set up Python
               uses: actions/setup-python@v5
               with:
-                  python-version: "3.10" # Set to your python version
+                  python-version: "3.10"
 
             - name: Install Poetry
-              run: |
-                  pip install poetry
+              run: pip install poetry
 
             - name: Install Dependencies
-              run: |
-                  poetry install --no-root
+              run: poetry install --no-root
 
-            # --- WINDOWS SPECIFIC BUILD ---
-            - name: Build with PyInstaller (Windows)
+            # --- BUILD COMMAND (ALL OS) ---
+            # We run the same command on all platforms now
+            - name: Build with PyInstaller
+              run: poetry run pyinstaller PRISM_Platform.spec --noconfirm
+
+            # --- WINDOWS ZIP ---
+            - name: Zip Windows Build
               if: matrix.os == 'windows-latest'
               run: |
-                  poetry run pyinstaller PRISM_Platform.spec
-                  # Rename output folder to something unique
-                  mv dist/PRISM_Platform dist/PRISM_Platform_Win
+                  # Use PowerShell to zip the folder created by PyInstaller
+                  Compress-Archive -Path "dist/PRISM Platform" -DestinationPath "dist/PRISM_Platform_Win.zip"
 
-            # --- LINUX SPECIFIC BUILD ---
-            - name: Build with PyInstaller (Linux)
+            # --- LINUX ZIP ---
+            - name: Zip Linux Build
               if: matrix.os == 'ubuntu-latest'
               run: |
-                  # Linux often needs these libraries for Qt/GUI apps
-                  sudo apt-get update
-                  sudo apt-get install -y libegl1 libxkbcommon-x11-0 libdbus-1-3 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 x11-utils
-                  poetry run pyinstaller PRISM_Platform.spec
-                  mv dist/PRISM_Platform dist/PRISM_Platform_Linux
+                  # Install libs just in case
+                  sudo apt-get update && sudo apt-get install -y libegl1 libxkbcommon-x11-0 libdbus-1-3 x11-utils
 
-            # --- MAC SPECIFIC BUILD ---
-            - name: Build with PyInstaller (macOS)
+                  cd dist
+                  zip -r PRISM_Platform_Linux.zip "PRISM Platform"
+
+            # --- MAC ZIP ---
+            - name: Zip macOS Build
               if: matrix.os == 'macos-latest'
               run: |
-                  poetry run pyinstaller PRISM_Platform.spec
-                  # On CI, we usually just want the raw .app zipped up, or a DMG. 
-                  # For now, let's just zip the .app
                   cd dist
-                  zip -r PRISM_Platform_Mac.zip "PRISM Platform.app"
+                  # Zip the FOLDER (not .app)
+                  zip -r PRISM_Platform_Mac.zip "PRISM Platform"
 
             # --- UPLOAD ARTIFACTS ---
-            - name: Upload Windows Artifact
+            - name: Upload Windows Zip
               if: matrix.os == 'windows-latest'
               uses: actions/upload-artifact@v4
               with:
                   name: PRISM-Windows
-                  path: dist/PRISM_Platform_Win
+                  path: dist/PRISM_Platform_Win.zip
 
-            - name: Upload Linux Artifact
+            - name: Upload Linux Zip
               if: matrix.os == 'ubuntu-latest'
               uses: actions/upload-artifact@v4
               with:
                   name: PRISM-Linux
-                  path: dist/PRISM_Platform_Linux
+                  path: dist/PRISM_Platform_Linux.zip
 
-            - name: Upload Mac Artifact
+            - name: Upload Mac Zip
               if: matrix.os == 'macos-latest'
               uses: actions/upload-artifact@v4
               with:
