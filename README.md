@@ -16,7 +16,7 @@ The worker application allows you to trace your own devices through the website.
 
 2. Download the worker application from [the releases page](https://github.com/ranjithrd/prism-platform/releases)
 
-3. Open the [host website](https://prism-ui.d.p.ranjithrd.in) to get an `API Key` for your system
+3. Open the [host website](https://prism-ui.d.p.ranjithrd.in){:target="_blank"} to get an `API Key` for your system
 
     - On the home page, click on "Add a Worker"
     - Type in the name of your system
@@ -41,17 +41,17 @@ The central server runs the UI and the services needed to manage traces.
 
 ## Prerequisites
 
-1. [Postgres](https://www.postgresql.org/)
+1. [Postgres](https://www.postgresql.org/){:target="_blank"}
 
-2. [Minio](https://github.com/seaweedfs/seaweedfs?tab=readme-ov-file#quick-start-for-s3-api-on-docker)/[SeaweedFS](https://github.com/seaweedfs/seaweedfs?tab=readme-ov-file#quick-start-for-s3-api-on-docker) or any other S3-compatible object storage
+2. [Minio](https://github.com/seaweedfs/seaweedfs?tab=readme-ov-file#quick-start-for-s3-api-on-docker){:target="_blank"}/[SeaweedFS](https://github.com/seaweedfs/seaweedfs?tab=readme-ov-file#quick-start-for-s3-api-on-docker){:target="_blank"} or any other S3-compatible object storage
 
 3. Android NDK with SimplePerf installed
 
-4. Python (supported versions: 3.12, 3.14, 3.14)
+4. Python (supported versions: 3.12, 3.14, 3.15)
 
-5. [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) (tested on v2.1.4)
+5. [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer){:target="_blank"} (tested on v2.1.4)
 
-6. [NodeJS](https://nodejs.org/en/download) (tested on v24.11.0)
+6. [NodeJS](https://nodejs.org/en/download){:target="_blank"} (tested on v24.11.0)
 
 ## Installation
 
