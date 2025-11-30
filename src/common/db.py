@@ -1,7 +1,7 @@
 import datetime
 import os
 import uuid
-from typing import Annotated
+from typing import Annotated, Optional
 
 from dotenv import load_dotenv
 from sqlmodel import Field, Relationship, Session, SQLModel, create_engine
@@ -35,11 +35,11 @@ class Device(SQLModel, table=True):
 class Trace(SQLModel, table=True):
     __tablename__ = "traces"
 
-    trace_id: str = Field(str, primary_key=True)
-    trace_timestamp: datetime.datetime = Field(datetime.datetime, nullable=False)
-    trace_filename: str = Field(str, nullable=False)
-    trace_html_filename: str = Field(str, nullable=False)
-    trace_name: str = Field(str, nullable=False)
+    trace_id: str = Field(primary_key=True)
+    trace_timestamp: datetime.datetime = Field(nullable=False)
+    trace_filename: str = Field(nullable=False)
+    trace_html_filename: Optional[str] = Field(default=None)
+    trace_name: str = Field(nullable=False)
     device_id: str = Field(default=None, foreign_key="devices.device_id")
     host_name: str = Field(default=None, foreign_key="hosts.host_name")
     configuration_id: str = Field(

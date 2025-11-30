@@ -2,9 +2,8 @@ import datetime
 import uuid
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi import Query as QueryParam
-from fastapi import UploadFile
 from pydantic import BaseModel
 from sqlmodel import desc, or_, select
 
@@ -331,6 +330,8 @@ async def create_trace(
             config = session.exec(
                 select(Config).where(Config.config_id == new_trace.configuration_id)
             ).first()
+
+        new_trace.trace_html_filename = ""
 
         resp = TraceDetail(
             trace_id=new_trace.trace_id,

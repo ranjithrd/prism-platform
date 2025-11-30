@@ -2,6 +2,9 @@
 install: 
 	poetry install --with gui
 
+install-server:
+	poetry install
+
 # Runs the app in development mode with auto-reload
 dev: 
 	poetry run uvicorn src.main:app --reload
@@ -9,11 +12,11 @@ dev:
 dev-frontend:
 	cd frontend && npm run dev
 
+PORT ?=8000
+
 # Runs the app in a production-ready way using Gunicorn
 run:
-	poetry run gunicorn -w 4 -k uvicorn.workers.UvicornWorker src.main:app
-
-PORT ?=8030
+	PORT=$(PORT) poetry run gunicorn -w 4 -k uvicorn.workers.UvicornWorker src.main:app
 
 run-worker:
 	poetry run python run_gui.py
