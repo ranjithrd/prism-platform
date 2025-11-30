@@ -8,7 +8,7 @@ This application is built in two parts:
 
 # Worker Application
 
-The worker application allows you to trace your own devices through the website. It listens to `adb devices` on your system and on handles requests from the central server to trace any Android devices connected to your system.
+The worker application allows you to trace your own devices through the website. It listens to `adb devices` on your system and handles requests from the central server to trace any Android devices connected to your system.
 
 ## Installation
 
@@ -47,7 +47,7 @@ The central server runs the UI and the services needed to manage traces.
 
 3. Android NDK with SimplePerf installed
 
-4. Python (supported versions: 3.12, 3.14, 3.15)
+4. Python (supported versions: 3.12, 3.14, 3.14)
 
 5. [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) (tested on v2.1.4)
 
