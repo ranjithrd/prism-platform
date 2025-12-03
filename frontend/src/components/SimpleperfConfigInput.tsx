@@ -1,4 +1,4 @@
-import { Input, Chip } from "@heroui/react"
+import { Input, Chip, Switch } from "@heroui/react"
 import { useState } from "react"
 import StringSelect from "./StringSelect"
 
@@ -9,6 +9,7 @@ interface SimpleperfConfig {
 	call_graph: string
 	record_command: string
 	extra_args: string[]
+	root_mode: boolean
 }
 
 export default function SimpleperfConfigInput({
@@ -28,6 +29,7 @@ export default function SimpleperfConfigInput({
 				call_graph: parsed.call_graph || "dwarf",
 				record_command: parsed.record_command || "record",
 				extra_args: parsed.extra_args || [],
+				root_mode: parsed.root_mode || false,
 			}
 		} catch {
 			return {
@@ -37,6 +39,7 @@ export default function SimpleperfConfigInput({
 				call_graph: "dwarf",
 				record_command: "record",
 				extra_args: [],
+				root_mode: false,
 			}
 		}
 	}
@@ -46,10 +49,24 @@ export default function SimpleperfConfigInput({
 	)
 	const [newEvent, setNewEvent] = useState("")
 	const [newArg, setNewArg] = useState("")
+	const [isSystemLevel, setIsSystemLevel] = useState(
+		config.debug_app_id.toLowerCase() === "system"
+	)
 
 	const updateConfigText = (updatedConfig: SimpleperfConfig) => {
 		setConfig(updatedConfig)
 		setConfigText(JSON.stringify(updatedConfig, null, 2))
+	}
+
+	const handleProfilingLevelChange = (systemLevel: boolean) => {
+		setIsSystemLevel(systemLevel)
+		const updatedConfig = {
+			...config,
+			debug_app_id: systemLevel ? "system" : "",
+			// Auto-enable root mode when switching to system-level
+			root_mode: systemLevel ? true : config.root_mode,
+		}
+		updateConfigText(updatedConfig)
 	}
 
 	const addEvent = () => {
@@ -88,20 +105,54 @@ export default function SimpleperfConfigInput({
 
 	return (
 		<div className="flex flex-col gap-4">
-			<Input
-				label="Debug App ID"
-				placeholder="com.example.app"
-				description="Package name of the app to profile"
-				value={config.debug_app_id}
-				onChange={(e) =>
-					updateConfigText({
-						...config,
-						debug_app_id: e.target.value,
-					})
-				}
-				labelPlacement="outside"
-				isRequired
-			/>
+			<Switch
+				isSelected={config.root_mode}
+				onValueChange={(value) => {
+					// Don't allow disabling root mode if system-level is enabled
+					if (isSystemLevel && !value) {
+						return
+					}
+					updateConfigText({ ...config, root_mode: value })
+				}}
+			>
+				<div className="flex flex-col">
+					<p className="text-sm font-medium">Root Mode</p>
+					<p className="text-xs text-default-500">
+						Run adb root before tracing
+					</p>
+				</div>
+			</Switch>
+
+			<Switch
+				isSelected={isSystemLevel}
+				onValueChange={handleProfilingLevelChange}
+				isDisabled={!config.root_mode}
+			>
+				<div className="flex flex-col">
+					<p className="text-sm font-medium">System-Level Profiling</p>
+					<p className="text-xs text-default-500">
+						Profile entire system instead of a specific app.{" "}
+						<span className="font-bold">Requires root mode.</span>
+					</p>
+				</div>
+			</Switch>
+
+			{!isSystemLevel && (
+				<Input
+					label="App Package Name"
+					placeholder="com.example.app"
+					description="Package name of the app to profile"
+					value={config.debug_app_id}
+					onChange={(e) =>
+						updateConfigText({
+							...config,
+							debug_app_id: e.target.value,
+						})
+					}
+					labelPlacement="outside"
+					isRequired
+				/>
+			)}
 
 			<Input
 				label="Sampling Frequency (Hz)"
@@ -125,6 +176,7 @@ export default function SimpleperfConfigInput({
 					updateConfigText({ ...config, call_graph: value })
 				}
 				detailedOptions={{
+					none: "None",
 					dwarf: "DWARF (Recommended)",
 					fp: "Frame Pointer",
 				}}
@@ -173,7 +225,7 @@ export default function SimpleperfConfigInput({
 					<button
 						type="button"
 						onClick={addEvent}
-						className="px-4 py-2 text-sm rounded-lg bg-primary-500 text-white hover:bg-primary-600"
+						className="px-4 py-2 text-sm text-white rounded-lg bg-sky-700 hover:bg-sky-800"
 					>
 						Add
 					</button>
@@ -210,7 +262,7 @@ export default function SimpleperfConfigInput({
 					<button
 						type="button"
 						onClick={addExtraArg}
-						className="px-4 py-2 text-sm rounded-lg bg-primary-500 text-white hover:bg-primary-600"
+						className="px-4 py-2 text-sm text-white rounded-lg bg-sky-700 hover:bg-sky-800"
 					>
 						Add
 					</button>

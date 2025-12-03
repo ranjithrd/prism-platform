@@ -10,12 +10,15 @@ from typing import Optional
 class SimpleperfConfigJson:
     """Configuration for simpleperf profiling"""
 
-    debug_app_id: str  # Package name like com.example.app
+    debug_app_id: (
+        str  # Package name like com.example.app, or "system" for system-wide trace
+    )
     events: list[str] = field(default_factory=lambda: ["cpu-cycles"])  # Events to trace
     frequency: int = 4000  # Sampling frequency in Hz
     call_graph: str = "dwarf"  # Call graph method: "fp" or "dwarf"
     record_command: str = "record"  # Simpleperf command to run
     extra_args: list[str] = field(default_factory=list)  # Additional arguments
+    root_mode: bool = False  # Whether to run adb root before tracing
 
 
 def run_simpleperf_trace(
@@ -52,8 +55,30 @@ def run_simpleperf_trace(
     device_trace_path = f"/data/local/tmp/perf_{trace_uuid}.data"
     local_trace_path = os.path.join(local_cache_dir, f"simpleperf_{trace_uuid}.data")
 
-    # Build simpleperf command using --app instead of -p <pid>
-    # Format: adb -s <serial> shell simpleperf record --app <package> -o <output> --duration <duration> [options]
+    # Run adb root if root_mode is enabled
+    if simpleperf_config.root_mode:
+        print("Enabling root mode...")
+        root_command = ["adb", "-s", device_serial, "root"]
+        try:
+            root_result = subprocess.run(
+                root_command, capture_output=True, text=True, timeout=10
+            )
+            if root_result.returncode != 0:
+                print(f"Warning: adb root failed: {root_result.stderr}")
+            else:
+                print("Root mode enabled successfully")
+                # Give device a moment to restart adbd
+                import time
+
+                time.sleep(2)
+        except subprocess.TimeoutExpired:
+            print("Warning: adb root command timed out")
+
+    # Build simpleperf command
+    # If debug_app_id is "system", do system-wide tracing (no --app argument)
+    # Otherwise use --app <package>
+    is_system_trace = simpleperf_config.debug_app_id.lower() == "system"
+
     simpleperf_args = [
         "adb",
         "-s",
@@ -61,18 +86,41 @@ def run_simpleperf_trace(
         "shell",
         "simpleperf",
         simpleperf_config.record_command,
-        "--app",
-        simpleperf_config.debug_app_id,
-        "-o",
-        device_trace_path,
-        "--duration",
-        str(duration_seconds),
-        "-g",  # Enable call graph recording
-        "--call-graph",
-        simpleperf_config.call_graph,
-        "-f",
-        str(simpleperf_config.frequency),
     ]
+
+    # Add --app argument only if not doing system-wide trace
+    if not is_system_trace:
+        simpleperf_args.extend(["--app", simpleperf_config.debug_app_id])
+    else:
+        # For system-wide traces, use -a (all processes)
+        simpleperf_args.append("-a")
+
+    simpleperf_args.extend(
+        [
+            "-o",
+            device_trace_path,
+            "--duration",
+            str(duration_seconds),
+        ]
+    )
+
+    # Only add call graph recording for non-system-wide traces
+    # if not is_system_trace:
+    if simpleperf_config.call_graph and simpleperf_config.call_graph.lower() != "none":
+        simpleperf_args.extend(
+            [
+                "-g",  # Enable call graph recording
+                "--call-graph",
+                simpleperf_config.call_graph,
+            ]
+        )
+
+    simpleperf_args.extend(
+        [
+            "-f",
+            str(simpleperf_config.frequency),
+        ]
+    )
 
     # Add events
     for event in simpleperf_config.events:

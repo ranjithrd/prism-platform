@@ -267,6 +267,56 @@ def download_html_report(
     )
 
 
+@router.get("/{trace_id}/download")
+def download_trace(
+    trace_id: str,
+    session: SessionDepType = Depends(get_session),
+    minio_helper: MinioHelper = Depends(get_minio_client),
+):
+    """Download the trace file with a proper filename"""
+    from fastapi.responses import Response
+
+    trace = session.exec(select(Trace).where(Trace.trace_id == trace_id)).first()
+    if not trace:
+        raise HTTPException(status_code=404, detail="Trace not found")
+
+    if minio_helper is None:
+        raise HTTPException(status_code=500, detail="Storage not available")
+
+    # Get configuration to determine tracing tool
+    config = None
+    if trace.configuration_id:
+        config = session.exec(
+            select(Config).where(Config.config_id == trace.configuration_id)
+        ).first()
+
+    # Determine file extension based on tracing tool
+    tracing_tool = config.tracing_tool if config else "unknown"
+    if tracing_tool == "perfetto" or not config:
+        extension = ".pftrace"
+    elif tracing_tool == "simpleperf":
+        extension = ".data"
+    else:
+        extension = ".trace"
+
+    # Download the file
+    trace_bytes = minio_helper.download_bytes(
+        minio_helper.DEFAULT_BUCKET, trace.trace_filename
+    )
+
+    if trace_bytes is None:
+        raise HTTPException(status_code=404, detail="Trace file not found in storage")
+
+    # Construct filename: <trace_id>-<tracing_tool>.<extension>
+    filename = f"{trace.trace_id}-{tracing_tool}{extension}"
+
+    return Response(
+        content=trace_bytes,
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
 @router.post("", response_model=TraceDetail, status_code=201)
 async def create_trace(
     trace_name: str = Form(...),

@@ -13,7 +13,7 @@ load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 
-SIMPLEPERF_FLAGS = []
+SIMPLEPERF_FLAGS = ["--no_browser"]
 
 DEFAULT_SEARCH_PATHS = [
     Path.home() / "Android" / "Sdk",

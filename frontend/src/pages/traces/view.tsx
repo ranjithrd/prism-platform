@@ -62,6 +62,11 @@ export default function TracesViewPage({ id }: { id: string }) {
 		window.open(viewUrl, '_blank')
 	}
 
+	const handleDownloadTrace = async () => {
+		const downloadUrl = `${API_BASE_URL}/v1/api/traces/${trace.trace_id}/download`
+		window.open(downloadUrl, '_blank')
+	}
+
 	return (
 		<Layout>
 			<p className="text-sm text-gray-600">Trace {trace.trace_id}</p>
@@ -145,14 +150,22 @@ export default function TracesViewPage({ id }: { id: string }) {
 				</>
 			)}
 			<div className="h-4"></div>
-			<Button
-				variant="bordered"
-				color="danger"
-				className="w-min"
-				onPress={handleDelete}
-			>
-				Delete Trace
-			</Button>
+			<div className="flex gap-2">
+				<Button
+					variant="bordered"
+					color="primary"
+					onPress={handleDownloadTrace}
+				>
+					Download Trace
+				</Button>
+				<Button
+					variant="bordered"
+					color="danger"
+					onPress={handleDelete}
+				>
+					Delete Trace
+				</Button>
+			</div>
 		</Layout>
 	)
 }
