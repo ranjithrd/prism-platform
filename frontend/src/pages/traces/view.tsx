@@ -9,7 +9,7 @@ import { toTitleCase } from "../../utils/humanize"
 import { autoToast } from "../../components/toast"
 import { useLocation } from "wouter"
 import { QueryResult } from "../../components/QueryResult"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { Query } from "../../api/schemas"
 
 const API_BASE_URL = import.meta.env.VITE_PUBLIC_API_URL || "http://localhost:8000"
@@ -18,6 +18,40 @@ export default function TracesViewPage({ id }: { id: string }) {
 	const { data: trace, isLoading } = useGetTraceV1ApiTracesTraceIdGet(id)
 	const [chosenQuery, setChosenQuery] = useState<Query | null>(null)
 	const [, navigate] = useLocation()
+	const [bpftraceOutput, setBpftraceOutput] = useState<string | null>(null)
+	const [isLoadingBpftrace, setIsLoadingBpftrace] = useState(false)
+
+	const isBpftrace = trace?.configuration_type === "bpftrace"
+
+	// Fetch bpftrace output when trace is loaded and it's a bpftrace trace
+	useEffect(() => {
+		if (trace && isBpftrace) {
+			setIsLoadingBpftrace(true)
+			fetch(`${API_BASE_URL}/v1/api/traces/${trace.trace_id}/raw-text`)
+				.then((res) => {
+					if (!res.ok) throw new Error("Failed to load trace output")
+					return res.text()
+				})
+				.then((text) => {
+					setBpftraceOutput(text)
+					setIsLoadingBpftrace(false)
+				})
+				.catch((err) => {
+					console.error("Error loading bpftrace output:", err)
+					setBpftraceOutput("Failed to load trace output")
+					setIsLoadingBpftrace(false)
+				})
+		}
+	}, [trace, isBpftrace])
+
+	async function handleCopyBpftrace() {
+		if (bpftraceOutput) {
+			await navigator.clipboard.writeText(bpftraceOutput)
+			autoToast(Promise.resolve(), {
+				successText: "Copied to clipboard!",
+			})
+		}
+	}
 
 	async function handleDelete() {
 		const confirmed = window.confirm(
@@ -84,6 +118,47 @@ export default function TracesViewPage({ id }: { id: string }) {
 				</p>
 			)}
 			<div className="h-4"></div>
+			
+			{isBpftrace && (
+				<>
+					<div className="p-4 mb-4 border rounded-lg border-primary-200 bg-primary-50">
+						<div className="flex items-center justify-between">
+							<h2 className="text-lg font-bold">
+								bpftrace Output
+							</h2>
+							<Button
+								color="primary"
+								size="sm"
+								variant="flat"
+								onPress={handleCopyBpftrace}
+								isDisabled={!bpftraceOutput || isLoadingBpftrace}
+							>
+								Copy
+							</Button>
+						</div>
+						<p className="mb-3 text-sm">
+							View the trace output from bpftrace
+						</p>
+					</div>
+					<div className="border rounded-lg border-default-200 bg-default-50">
+						{isLoadingBpftrace && (
+							<div className="p-4 text-sm text-default-500">
+								Loading trace output...
+							</div>
+						)}
+						{!isLoadingBpftrace && bpftraceOutput && (
+							<pre className="p-4 overflow-auto text-xs font-mono max-h-[600px] whitespace-pre">
+								{bpftraceOutput}
+							</pre>
+						)}
+						{!isLoadingBpftrace && !bpftraceOutput && (
+							<div className="p-4 text-sm text-warning-600">
+								No output available for this trace
+							</div>
+						)}
+					</div>
+				</>
+			)}
 			
 			{isSimpleperf && hasHtmlReport && (
 				<>

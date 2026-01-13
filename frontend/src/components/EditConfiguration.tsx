@@ -4,6 +4,7 @@ import { Button, Input } from "@heroui/react"
 import StringSelect from "./StringSelect"
 import SimpleperfConfigInput from "./SimpleperfConfigInput"
 import PerfettoConfigInput from "./PerfettoConfigInput"
+import BpftraceConfigInput from "./BpftraceConfigInput"
 
 export default function EditConfiguration({
 	configuration,
@@ -65,12 +66,23 @@ export default function EditConfiguration({
 				detailedOptions={{
 					perfetto: "Perfetto",
 					simpleperf: "Simpleperf",
+					bpftrace: "bpftrace",
 				}}
 			/>
 			<div className="h-4"></div>
 			<p className="mb-2 font-medium">Configuration</p>
 			{editedConfig.tracing_tool === "simpleperf" ? (
 				<SimpleperfConfigInput
+					configText={editedConfig.config_text || ""}
+					setConfigText={(text) =>
+						setEditedConfig({
+							...editedConfig,
+							config_text: text,
+						})
+					}
+				/>
+			) : editedConfig.tracing_tool === "bpftrace" ? (
+				<BpftraceConfigInput
 					configText={editedConfig.config_text || ""}
 					setConfigText={(text) =>
 						setEditedConfig({

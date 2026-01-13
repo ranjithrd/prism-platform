@@ -3,6 +3,8 @@ PRISM Platform Worker GUI
 Ultra-simple PySide6 (Qt) interface for managing worker configuration and viewing devices.
 """
 
+import platform
+import subprocess
 import sys
 import threading
 
@@ -22,6 +24,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.worker.config import get_value_from_config, set_value_in_config, worker_config
+from src.worker.script_runner import run_script_in_worker
 
 
 class DeviceUpdateSignal(QObject):
@@ -29,6 +32,7 @@ class DeviceUpdateSignal(QObject):
 
     devices_updated = Signal(list)  # List of (serial, status, extra_info)
     error_occurred = Signal(str)  # Error message
+    status_message = Signal(str, str)  # (message, color) for status updates
 
 
 class PrismWorkerGUI(QMainWindow):
@@ -53,6 +57,7 @@ class PrismWorkerGUI(QMainWindow):
         self.signal_emitter = DeviceUpdateSignal()
         self.signal_emitter.devices_updated.connect(self.update_device_list)
         self.signal_emitter.error_occurred.connect(self.show_error_status)
+        self.signal_emitter.status_message.connect(self.show_status_message)
 
         # Store callback for external registration
         if device_callback:
@@ -91,11 +96,44 @@ class PrismWorkerGUI(QMainWindow):
         """Create the GUI layout."""
         # --- Header Section ---
 
+        # Header with title and quit button
+        header_layout = QHBoxLayout()
+
         # Title (left-aligned)
         title = QLabel("PRISM Platform Worker")
         title.setFont(QFont("Arial", 24, QFont.Weight.Bold))
         title.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        main_layout.addWidget(title)
+        header_layout.addWidget(title)
+
+        # Spacer
+        header_layout.addStretch()
+
+        # Quit button (right-aligned, subtle)
+        quit_button = QPushButton("Quit")
+        quit_button.setFont(QFont("Arial", 10))
+        quit_button.setFixedSize(50, 24)
+        quit_button.clicked.connect(self.close)
+        quit_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: transparent;
+                color: #ef4444;
+                border: 1px solid #ef4444;
+                border-radius: 4px;
+                padding: 2px;
+            }
+            QPushButton:hover {
+                background-color: #ef4444;
+                color: white;
+            }
+            QPushButton:pressed {
+                background-color: #dc2626;
+            }
+        """
+        )
+        header_layout.addWidget(quit_button)
+
+        main_layout.addLayout(header_layout)
         main_layout.addSpacing(10)
 
         # API Key Label
@@ -139,6 +177,30 @@ class PrismWorkerGUI(QMainWindow):
         """
         )
         main_layout.addWidget(save_button)
+
+        # Install eadb Button (subtle styling)
+        install_eadb_button = QPushButton("Install eadb")
+        install_eadb_button.setFont(QFont("Arial", 12, QFont.Weight.Bold))
+        install_eadb_button.setMinimumHeight(32)
+        install_eadb_button.clicked.connect(self.install_eadb)
+        install_eadb_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: palette(base);
+                color: palette(text);
+                border: 1px solid palette(mid);
+                border-radius: 4px;
+                padding: 8px;
+            }
+            QPushButton:hover {
+                background-color: palette(light);
+            }
+            QPushButton:pressed {
+                background-color: palette(midlight);
+            }
+        """
+        )
+        main_layout.addWidget(install_eadb_button)
         main_layout.addSpacing(15)
 
         # API URL Display (left-aligned, bold)
@@ -217,6 +279,162 @@ class PrismWorkerGUI(QMainWindow):
             self.show_status_message("✓ API Key saved successfully!", "#22c55e")
         else:
             self.show_status_message("✗ API Key cannot be empty!", "#ef4444")
+
+    def install_eadb(self):
+        """Install eadb by opening a new terminal window."""
+        try:
+            self.show_status_message(
+                "Opening terminal for eadb installation...", "#3b82f6"
+            )
+
+            # Get the script path
+            import os
+
+            script_dir = os.path.join(os.path.dirname(__file__), "scripts")
+            script_path = os.path.join(script_dir, "eadb_install.sh")
+
+            # Open new terminal based on OS
+            if platform.system() == "Darwin":  # macOS
+                # Use osascript to open Terminal.app with the script
+                subprocess.Popen(
+                    [
+                        "osascript",
+                        "-e",
+                        f'tell app "Terminal" to do script "bash {script_path}"',
+                    ]
+                )
+            elif platform.system() == "Linux":
+                # Try common Linux terminals
+                terminals = ["gnome-terminal", "konsole", "xterm"]
+                for term in terminals:
+                    if (
+                        subprocess.run(["which", term], capture_output=True).returncode
+                        == 0
+                    ):
+                        if term == "gnome-terminal":
+                            subprocess.Popen([term, "--", "bash", script_path])
+                        else:
+                            subprocess.Popen([term, "-e", f"bash {script_path}"])
+                        break
+            elif platform.system() == "Windows":
+                # Use Windows Terminal if available, fallback to cmd
+                subprocess.Popen(
+                    ["cmd", "/c", "start", "cmd", "/k", f"bash {script_path}"],
+                    shell=True,
+                )
+            else:  # Fallback
+                # Fallback to background execution with status update
+                import threading
+
+                def run_install():
+                    try:
+                        run_script_in_worker("eadb_install")
+                        self.signal_emitter.status_message.emit(
+                            "✓ eadb installed successfully!", "#22c55e"
+                        )
+                    except Exception as e:
+                        self.signal_emitter.status_message.emit(
+                            f"✗ Installation failed: {str(e)}", "#ef4444"
+                        )
+
+                threading.Thread(target=run_install, daemon=True).start()
+                return
+
+            self.show_status_message(
+                "Terminal opened - check terminal window for progress", "#22c55e"
+            )
+        except Exception as e:
+            self.show_status_message(f"✗ Error: {str(e)}", "#ef4444")
+
+    def setup_eadb_for_device(self, device_serial):
+        """Set up eadb and install bpftrace by opening a new terminal window."""
+        try:
+            self.show_status_message(
+                f"Opening terminal for bpftrace installation on {device_serial}...",
+                "#3b82f6",
+            )
+
+            # Get the Python script path
+            import os
+
+            script_dir = os.path.join(os.path.dirname(__file__), "scripts")
+            script_path = os.path.join(script_dir, "bpftrace_install.py")
+
+            # Open new terminal based on OS
+            if platform.system() == "Darwin":  # macOS
+                # Use osascript to open Terminal.app with the Python script
+                commands = f"python3 {script_path} {device_serial}"
+                subprocess.Popen(
+                    [
+                        "osascript",
+                        "-e",
+                        f'tell app "Terminal" to do script "{commands}"',
+                    ]
+                )
+            elif platform.system() == "Linux":
+                # Try common Linux terminals
+                terminals = ["gnome-terminal", "konsole", "xterm"]
+                commands = f"python3 {script_path} {device_serial}"
+                for term in terminals:
+                    if (
+                        subprocess.run(["which", term], capture_output=True).returncode
+                        == 0
+                    ):
+                        if term == "gnome-terminal":
+                            subprocess.Popen([term, "--", "bash", "-c", commands])
+                        else:
+                            subprocess.Popen([term, "-e", f"bash -c '{commands}'"])
+                        break
+            elif platform.system() == "Windows":
+                # Use Windows cmd to spawn new window with Python script
+                subprocess.Popen(
+                    [
+                        "cmd",
+                        "/c",
+                        "start",
+                        "cmd",
+                        "/k",
+                        f"python {script_path} {device_serial}",
+                    ],
+                    shell=True,
+                )
+            else:  # Fallback
+                # Fallback to background execution
+                import threading
+
+                def run_setup():
+                    try:
+                        result = subprocess.run(
+                            ["python3", script_path, device_serial],
+                            capture_output=True,
+                            text=True,
+                            timeout=600,
+                        )
+                        if result.returncode == 0:
+                            self.signal_emitter.status_message.emit(
+                                f"✓ bpftrace installed for {device_serial}!", "#22c55e"
+                            )
+                        else:
+                            self.signal_emitter.status_message.emit(
+                                "✗ Installation failed", "#ef4444"
+                            )
+                    except subprocess.TimeoutExpired:
+                        self.signal_emitter.status_message.emit(
+                            "✗ Installation timed out", "#ef4444"
+                        )
+                    except Exception as e:
+                        self.signal_emitter.status_message.emit(
+                            f"✗ Installation failed: {str(e)}", "#ef4444"
+                        )
+
+                threading.Thread(target=run_setup, daemon=True).start()
+                return
+
+            self.show_status_message(
+                "Terminal opened - check terminal window for progress", "#22c55e"
+            )
+        except Exception as e:
+            self.show_status_message(f"✗ Error: {str(e)}", "#ef4444")
 
     def show_status_message(self, message, color):
         """Show a temporary status message."""
@@ -311,6 +529,30 @@ class PrismWorkerGUI(QMainWindow):
 
         # Spacer
         card_layout.addStretch()
+
+        # Set up eadb button (device-specific, subtle)
+        setup_button = QPushButton("Set up BPFTrace")
+        setup_button.setFont(QFont("Arial", 9, QFont.Weight.Bold))
+        setup_button.setFixedSize(90, 24)
+        setup_button.clicked.connect(lambda: self.setup_eadb_for_device(serial))
+        setup_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: palette(base);
+                color: palette(text);
+                border: 1px solid palette(mid);
+                border-radius: 4px;
+                padding: 4px;
+            }
+            QPushButton:hover {
+                background-color: palette(light);
+            }
+            QPushButton:pressed {
+                background-color: palette(midlight);
+            }
+        """
+        )
+        card_layout.addWidget(setup_button)
 
         # Status indicator with adaptive colors (no shadow)
         if status == "device" or status == "available":

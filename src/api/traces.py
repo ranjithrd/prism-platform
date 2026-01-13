@@ -267,6 +267,55 @@ def download_html_report(
     )
 
 
+@router.get("/{trace_id}/raw-text")
+def get_raw_trace_text(
+    trace_id: str,
+    session: SessionDepType = Depends(get_session),
+    minio_helper: MinioHelper = Depends(get_minio_client),
+):
+    """Get the raw text content of a trace (for bpftrace traces)"""
+    from fastapi.responses import PlainTextResponse
+
+    trace = session.exec(select(Trace).where(Trace.trace_id == trace_id)).first()
+    if not trace:
+        raise HTTPException(status_code=404, detail="Trace not found")
+
+    # Get configuration to check tracing tool
+    config = None
+    if trace.configuration_id:
+        config = session.exec(
+            select(Config).where(Config.config_id == trace.configuration_id)
+        ).first()
+
+    # Only allow text retrieval for bpftrace traces
+    if config and config.tracing_tool != "bpftrace":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Raw text view is only available for bpftrace traces, not {config.tracing_tool}",
+        )
+
+    if minio_helper is None:
+        raise HTTPException(status_code=500, detail="Storage not available")
+
+    # Download the trace file
+    trace_bytes = minio_helper.download_bytes(
+        minio_helper.DEFAULT_BUCKET, trace.trace_filename
+    )
+
+    if trace_bytes is None:
+        raise HTTPException(status_code=404, detail="Trace file not found in storage")
+
+    # Decode as UTF-8 text
+    try:
+        trace_text = trace_bytes.decode("utf-8")
+    except UnicodeDecodeError:
+        raise HTTPException(
+            status_code=500, detail="Trace file is not valid UTF-8 text"
+        )
+
+    return PlainTextResponse(content=trace_text)
+
+
 @router.get("/{trace_id}/download")
 def download_trace(
     trace_id: str,
@@ -296,6 +345,8 @@ def download_trace(
         extension = ".pftrace"
     elif tracing_tool == "simpleperf":
         extension = ".data"
+    elif tracing_tool == "bpftrace":
+        extension = ".txt"
     else:
         extension = ".trace"
 

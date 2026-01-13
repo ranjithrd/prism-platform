@@ -7,6 +7,7 @@ from src.common.adb import adb_devices, is_device_connected
 
 from .api import get_worker_client
 from .config import worker_config
+from .run_bpftrace import run_bpftrace_trace
 from .run_perfetto import run_perfetto_trace
 from .run_simpleperf import run_simpleperf_trace
 
@@ -51,83 +52,118 @@ def update_device_statuses():
     """Update device statuses in the database based on ADB connections.
     Also notifies GUI if callback is registered.
     """
-    worker_config.refresh_config()
-    devices = adb_devices()
-    online_devices = []
-    hostname = worker_config.hostname
-    client = get_worker_client()
+    try:
+        worker_config.refresh_config()
+        devices = adb_devices()
+        online_devices = []
+        hostname = worker_config.hostname
+        client = get_worker_client()
 
-    print("Logging connected devices:")
-    print(devices)
-    db_devices = client.get_existing_devices()
-    print(db_devices)
+        print("Logging connected devices:")
+        print(devices)
 
-    # Prepare GUI update list
-    gui_device_list = []
+        # Wrap API call in try-except to prevent complete failure
+        try:
+            db_devices = client.get_existing_devices()
+            print(db_devices)
+        except Exception as e:
+            print(f"[ERROR] Failed to get existing devices from API: {e}")
+            db_devices = []
+            # Still continue to update GUI with current ADB devices
 
-    for device in devices:
-        serial = device.get("serial")
-        state = device.get("state")
-        if serial and state:
-            # Skip devices that are currently tracing - don't overwrite their status
-            if serial in _tracing_devices:
-                continue
+        # Prepare GUI update list
+        gui_device_list = []
 
-            # Add to GUI list
-            gui_device_list.append((serial, state, None))
+        for device in devices:
+            serial = device.get("serial")
+            state = device.get("state")
+            if serial and state:
+                # Skip devices that are currently tracing - don't overwrite their status
+                if serial in _tracing_devices:
+                    continue
 
-            existing_device = next(
-                (
-                    d
-                    for d in db_devices
-                    if d["device_uuid"] == serial or d["device_id"] == serial
-                ),
-                None,
-            )
+                # Add to GUI list
+                gui_device_list.append((serial, state, None))
 
-            if not existing_device:
-                new_id = str(uuid.uuid4())
-                online_devices.append(new_id)
-                client.add_new_device(
-                    {
-                        "device_id": new_id,
-                        "device_name": serial,
-                        "device_uuid": serial,
-                        "last_seen": datetime.now(timezone.utc).isoformat(),
-                        "last_status": "online",
-                        "host": hostname,
-                    }
+                existing_device = next(
+                    (
+                        d
+                        for d in db_devices
+                        if d["device_uuid"] == serial or d["device_id"] == serial
+                    ),
+                    None,
                 )
-                print(f"Added device to DB: {serial}")
-            else:
-                existing_device["last_seen"] = datetime.now(timezone.utc).isoformat()
-                existing_device["host"] = hostname
-                existing_device["last_status"] = "online"
-                online_devices.append(existing_device["device_id"])
-                client.update_device(existing_device["device_id"], existing_device)
-                print(f"Updated device in DB: {existing_device['device_name']}")
 
-    for db_device in db_devices:
-        if (db_device["device_id"] not in online_devices) and (
-            db_device["last_status"] != "offline"
-        ):
-            db_device["last_status"] = "offline"
-            client.update_device(db_device["device_id"], db_device)
-            print(f"Marked device as offline in DB: {db_device['device_name']}")
+                try:
+                    if not existing_device:
+                        new_id = str(uuid.uuid4())
+                        online_devices.append(new_id)
+                        client.add_new_device(
+                            {
+                                "device_id": new_id,
+                                "device_name": serial,
+                                "device_uuid": serial,
+                                "last_seen": datetime.now(timezone.utc).isoformat(),
+                                "last_status": "online",
+                                "host": hostname,
+                            }
+                        )
+                        print(f"Added device to DB: {serial}")
+                    else:
+                        existing_device["last_seen"] = datetime.now(
+                            timezone.utc
+                        ).isoformat()
+                        existing_device["host"] = hostname
+                        existing_device["last_status"] = "online"
+                        online_devices.append(existing_device["device_id"])
+                        client.update_device(
+                            existing_device["device_id"], existing_device
+                        )
+                        print(f"Updated device in DB: {existing_device['device_name']}")
+                except Exception as e:
+                    print(f"[ERROR] Failed to update device {serial} in DB: {e}")
+                    # Continue with next device
 
-    # Check for authentication errors and notify GUI
-    if _gui_error_callback and client.last_auth_error:
-        try:
-            _gui_error_callback(client.last_auth_error)
-        except Exception as e:
-            print(f"[GUI] Error calling error callback: {e}")
+        # Mark offline devices
+        for db_device in db_devices:
+            try:
+                if (db_device["device_id"] not in online_devices) and (
+                    db_device["last_status"] != "offline"
+                ):
+                    db_device["last_status"] = "offline"
+                    client.update_device(db_device["device_id"], db_device)
+                    print(f"Marked device as offline in DB: {db_device['device_name']}")
+            except Exception as e:
+                print(
+                    f"[ERROR] Failed to mark device {db_device.get('device_name')} as offline: {e}"
+                )
+                # Continue with next device
 
-    # Notify GUI if callback is registered
-    if _gui_device_callback:
-        try:
-            _gui_device_callback(gui_device_list)
-        except Exception as e:
-            print(f"[GUI] Error calling device callback: {e}")
+        # Check for authentication errors and notify GUI
+        if _gui_error_callback and client.last_auth_error:
+            try:
+                _gui_error_callback(client.last_auth_error)
+            except Exception as e:
+                print(f"[GUI] Error calling error callback: {e}")
+
+        # ALWAYS notify GUI if callback is registered, even if API calls failed
+        if _gui_device_callback:
+            try:
+                _gui_device_callback(gui_device_list)
+            except Exception as e:
+                print(f"[GUI] Error calling device callback: {e}")
+
+    except Exception as e:
+        print(f"[ERROR] Critical error in update_device_statuses: {e}")
+        import traceback
+
+        traceback.print_exc()
+        # Even on critical error, try to notify GUI with empty list
+        if _gui_device_callback:
+            try:
+                _gui_device_callback([])
+            except:
+                pass
 
 
 def process_job_device(
@@ -218,6 +254,7 @@ def process_job_device(
         )
 
         local_trace_path, local_html_path = None, None
+        error_message = None
 
         if config["tracing_tool"] == "perfetto":
             local_trace_path, local_html_path = run_perfetto_trace(
@@ -227,15 +264,31 @@ def process_job_device(
             local_trace_path, local_html_path = run_simpleperf_trace(
                 device_uuid, config, duration_seconds=duration
             )
+        elif config["tracing_tool"] == "bpftrace":
+            local_trace_path, error_message = run_bpftrace_trace(
+                device_uuid, config, duration_seconds=duration
+            )
 
         if not local_trace_path:
             print(f"Failed to collect trace from {device_uuid}")
+
+            # Remove from tracing set before returning
+            _tracing_devices.discard(device_uuid)
+
+            # Notify GUI that device is available again
+            if _gui_device_callback:
+                try:
+                    _gui_device_callback([(device_uuid, "available", None)])
+                except Exception as e:
+                    print(f"[GUI] Error calling available callback: {e}")
+
             client.update_job_device_status(job_device_id, "failed")
+            failure_msg = error_message if error_message else "Failed to collect trace"
             client.send_job_update(
                 job_id,
                 device_id,
                 "failed",
-                "Failed to collect trace",
+                failure_msg,
             )
             return
 
@@ -278,6 +331,10 @@ def process_job_device(
         if config["tracing_tool"] == "simpleperf":
             minio_filename = (
                 f"{file_uuid}-{config.get('config_name', 'config')}-simpleperf.data"
+            )
+        elif config["tracing_tool"] == "bpftrace":
+            minio_filename = (
+                f"{file_uuid}-{config.get('config_name', 'config')}.bpftrace-trace.txt"
             )
 
         with open(local_trace_path, "rb") as f:
