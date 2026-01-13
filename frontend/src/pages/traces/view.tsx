@@ -30,7 +30,7 @@ export default function TracesViewPage({ id }: { id: string }) {
 
 	async function handleCopyBpftrace() {
 		if (bpftraceOutput) {
-			await navigator.clipboard.writeText(bpftraceOutput)
+			await navigator.clipboard.writeText(bpftraceOutput as string)
 			autoToast(Promise.resolve(), {
 				successText: "Copied to clipboard!",
 			})
@@ -135,7 +135,7 @@ export default function TracesViewPage({ id }: { id: string }) {
 						)}
 						{!isLoadingBpftrace && bpftraceOutput && (
 							<pre className="p-4 overflow-auto text-xs font-mono max-h-[600px] whitespace-pre">
-								{bpftraceOutput}
+								{bpftraceOutput as string}
 							</pre>
 						)}
 						{!isLoadingBpftrace && !bpftraceOutput && (
