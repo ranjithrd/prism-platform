@@ -997,6 +997,86 @@ export const useDownloadHtmlReportV1ApiTracesTraceIdHtmlReportDownloadGet = <TEr
 }
 
 /**
+ * Get the raw text content of a trace (for bpftrace traces)
+ * @summary Get Raw Trace Text
+ */
+export const getRawTraceTextV1ApiTracesTraceIdRawTextGet = (
+    traceId: string,
+ options?: SecondParameter<typeof axiosInstance>) => {
+    return axiosInstance<unknown>(
+    {url: `/v1/api/traces/${traceId}/raw-text`, method: 'GET'
+    },
+    options);
+  }
+
+
+
+export const getGetRawTraceTextV1ApiTracesTraceIdRawTextGetKey = (traceId: string,) => [`/v1/api/traces/${traceId}/raw-text`] as const;
+
+export type GetRawTraceTextV1ApiTracesTraceIdRawTextGetQueryResult = NonNullable<Awaited<ReturnType<typeof getRawTraceTextV1ApiTracesTraceIdRawTextGet>>>
+export type GetRawTraceTextV1ApiTracesTraceIdRawTextGetQueryError = HTTPValidationError
+
+/**
+ * @summary Get Raw Trace Text
+ */
+export const useGetRawTraceTextV1ApiTracesTraceIdRawTextGet = <TError = HTTPValidationError>(
+  traceId: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof getRawTraceTextV1ApiTracesTraceIdRawTextGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
+) => {
+  const {swr: swrOptions, request: requestOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false && !!(traceId)
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getGetRawTraceTextV1ApiTracesTraceIdRawTextGetKey(traceId) : null);
+  const swrFn = () => getRawTraceTextV1ApiTracesTraceIdRawTextGet(traceId, requestOptions)
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+
+/**
+ * Download the trace file with a proper filename
+ * @summary Download Trace
+ */
+export const downloadTraceV1ApiTracesTraceIdDownloadGet = (
+    traceId: string,
+ options?: SecondParameter<typeof axiosInstance>) => {
+    return axiosInstance<unknown>(
+    {url: `/v1/api/traces/${traceId}/download`, method: 'GET'
+    },
+    options);
+  }
+
+
+
+export const getDownloadTraceV1ApiTracesTraceIdDownloadGetKey = (traceId: string,) => [`/v1/api/traces/${traceId}/download`] as const;
+
+export type DownloadTraceV1ApiTracesTraceIdDownloadGetQueryResult = NonNullable<Awaited<ReturnType<typeof downloadTraceV1ApiTracesTraceIdDownloadGet>>>
+export type DownloadTraceV1ApiTracesTraceIdDownloadGetQueryError = HTTPValidationError
+
+/**
+ * @summary Download Trace
+ */
+export const useDownloadTraceV1ApiTracesTraceIdDownloadGet = <TError = HTTPValidationError>(
+  traceId: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof downloadTraceV1ApiTracesTraceIdDownloadGet>>, TError> & { swrKey?: Key, enabled?: boolean }, request?: SecondParameter<typeof axiosInstance> }
+) => {
+  const {swr: swrOptions, request: requestOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false && !!(traceId)
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getDownloadTraceV1ApiTracesTraceIdDownloadGetKey(traceId) : null);
+  const swrFn = () => downloadTraceV1ApiTracesTraceIdDownloadGet(traceId, requestOptions)
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+
+/**
  * Get all queries
  * @summary Get Queries
  */

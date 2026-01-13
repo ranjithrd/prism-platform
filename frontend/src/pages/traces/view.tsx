@@ -2,6 +2,7 @@ import { Button } from "@heroui/react"
 import {
 	deleteTraceV1ApiTracesTraceIdDeletePost,
 	useGetTraceV1ApiTracesTraceIdGet,
+	useGetRawTraceTextV1ApiTracesTraceIdRawTextGet,
 } from "../../api/api-client"
 import { InlineQueries } from "../../components/InlineQueries"
 import { Layout } from "../../components/Layout"
@@ -9,40 +10,23 @@ import { toTitleCase } from "../../utils/humanize"
 import { autoToast } from "../../components/toast"
 import { useLocation } from "wouter"
 import { QueryResult } from "../../components/QueryResult"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import type { Query } from "../../api/schemas"
 
-const API_BASE_URL = import.meta.env.VITE_PUBLIC_API_URL || "http://localhost:8000"
+const API_BASE_URL =
+	import.meta.env.VITE_PUBLIC_API_URL || "http://localhost:8000"
 
 export default function TracesViewPage({ id }: { id: string }) {
 	const { data: trace, isLoading } = useGetTraceV1ApiTracesTraceIdGet(id)
 	const [chosenQuery, setChosenQuery] = useState<Query | null>(null)
 	const [, navigate] = useLocation()
-	const [bpftraceOutput, setBpftraceOutput] = useState<string | null>(null)
-	const [isLoadingBpftrace, setIsLoadingBpftrace] = useState(false)
 
 	const isBpftrace = trace?.configuration_type === "bpftrace"
 
-	// Fetch bpftrace output when trace is loaded and it's a bpftrace trace
-	useEffect(() => {
-		if (trace && isBpftrace) {
-			setIsLoadingBpftrace(true)
-			fetch(`${API_BASE_URL}/v1/api/traces/${trace.trace_id}/raw-text`)
-				.then((res) => {
-					if (!res.ok) throw new Error("Failed to load trace output")
-					return res.text()
-				})
-				.then((text) => {
-					setBpftraceOutput(text)
-					setIsLoadingBpftrace(false)
-				})
-				.catch((err) => {
-					console.error("Error loading bpftrace output:", err)
-					setBpftraceOutput("Failed to load trace output")
-					setIsLoadingBpftrace(false)
-				})
-		}
-	}, [trace, isBpftrace])
+	const { data: bpftraceOutput, isLoading: isLoadingBpftrace } =
+		useGetRawTraceTextV1ApiTracesTraceIdRawTextGet(id, {
+			swr: { enabled: isBpftrace },
+		})
 
 	async function handleCopyBpftrace() {
 		if (bpftraceOutput) {
@@ -83,22 +67,23 @@ export default function TracesViewPage({ id }: { id: string }) {
 		)
 
 	const isSimpleperf = trace.configuration_type === "simpleperf"
-	const isPerfetto = !trace.configuration_type || trace.configuration_type === "perfetto"
+	const isPerfetto =
+		!trace.configuration_type || trace.configuration_type === "perfetto"
 	const hasHtmlReport = !!trace.trace_html_filename
 
 	const handleDownloadReport = () => {
 		const downloadUrl = `${API_BASE_URL}/v1/api/traces/${trace.trace_id}/html-report-download`
-		window.open(downloadUrl, '_blank')
+		window.open(downloadUrl, "_blank")
 	}
 
 	const handleViewReport = () => {
 		const viewUrl = `${API_BASE_URL}/v1/api/traces/${trace.trace_id}/html-report`
-		window.open(viewUrl, '_blank')
+		window.open(viewUrl, "_blank")
 	}
 
 	const handleDownloadTrace = async () => {
 		const downloadUrl = `${API_BASE_URL}/v1/api/traces/${trace.trace_id}/download`
-		window.open(downloadUrl, '_blank')
+		window.open(downloadUrl, "_blank")
 	}
 
 	return (
@@ -118,7 +103,7 @@ export default function TracesViewPage({ id }: { id: string }) {
 				</p>
 			)}
 			<div className="h-4"></div>
-			
+
 			{isBpftrace && (
 				<>
 					<div className="p-4 mb-4 border rounded-lg border-primary-200 bg-primary-50">
@@ -131,7 +116,9 @@ export default function TracesViewPage({ id }: { id: string }) {
 								size="sm"
 								variant="flat"
 								onPress={handleCopyBpftrace}
-								isDisabled={!bpftraceOutput || isLoadingBpftrace}
+								isDisabled={
+									!bpftraceOutput || isLoadingBpftrace
+								}
 							>
 								Copy
 							</Button>
@@ -159,7 +146,7 @@ export default function TracesViewPage({ id }: { id: string }) {
 					</div>
 				</>
 			)}
-			
+
 			{isSimpleperf && hasHtmlReport && (
 				<>
 					<div className="p-4 mb-4 border rounded-lg border-primary-200 bg-primary-50">
@@ -198,7 +185,7 @@ export default function TracesViewPage({ id }: { id: string }) {
 					</div>
 				</>
 			)}
-			
+
 			{isSimpleperf && !hasHtmlReport && (
 				<div className="p-4 mb-4 border rounded-lg border-warning-200 bg-warning-50">
 					<p className="text-sm text-warning-800">
@@ -207,7 +194,7 @@ export default function TracesViewPage({ id }: { id: string }) {
 					</p>
 				</div>
 			)}
-			
+
 			{isPerfetto && (
 				<>
 					<InlineQueries
